@@ -23,7 +23,7 @@ from random import randrange
 from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
-# from utils import contacts_drive as contacts
+from utils import contacts_drive as contacts
 from src import poll, tareas, birthday, listas, tesoreria, drive, new_member
 
 warnings.filterwarnings("ignore")
