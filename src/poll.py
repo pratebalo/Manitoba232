@@ -38,8 +38,8 @@ def encuestas(update: Update, context: CallbackContext) -> None:
         for i, poll in polls.iterrows():
             keyboardline = []
             text += f" {i + 1}. {poll.question}\n"
-            keyboardline.append(InlineKeyboardButton(i + 1, callback_data="NADA"))
-            # keyboardline.append(InlineKeyboardButton("👀", callback_data="VER" + str(poll.id)))
+            keyboardline.append(InlineKeyboardButton(i + 1, callback_data="A"))
+            keyboardline.append(InlineKeyboardButton("👀", callback_data="VER" + str(poll.id)))
             keyboardline.append(InlineKeyboardButton("🗑", callback_data="ELIMINAR" + str(poll.id)))
             keyboardline.append(InlineKeyboardButton("📯", callback_data="FINALIZAR" + str(poll.id)))
             keyboard.append(keyboardline)
@@ -55,6 +55,8 @@ def encuestas(update: Update, context: CallbackContext) -> None:
 
 def receive_poll_answer(update: Update, context: CallbackContext) -> None:
     """Summarize a users poll vote"""
+    data = db.select("data")
+    user_id = int(update.poll_answer.user.id)
     polls = db.select("encuestas")
     poll_id = int(update.poll_answer.poll_id)
     poll = polls[polls.id == poll_id].squeeze()
@@ -66,9 +68,11 @@ def receive_poll_answer(update: Update, context: CallbackContext) -> None:
         db.update_poll(poll_id, votes)
     else:
         votos = [poll.options[i] for i in respuesta.option_ids]
-        logger.warning(f"{update.effective_user.first_name} ha votado {votos} en la encuesta {poll.question}")
-        votes.append(int(update.poll_answer.user.id))
-        db.update_poll(poll_id, votes)
+        restantes = data[~data.id.isin(votes) & data.id != user_id].apodo.tolist()
+        logger.warning(
+            f"{update.effective_user.first_name} ha votado {votos} en la encuesta {poll.question}. Restantes -> {restantes}")
+        votes.append(user_id)
+        db.update_poll(poll_id, votes, poll.message_id)
 
 
 def receive_poll(update: Update, context: CallbackContext) -> None:
@@ -171,11 +175,15 @@ def ver_encuesta(update: Update, context: CallbackContext):
 
     chat = int(poll.chat_id)
     id_mensaje = int(poll.message_id)
-    db.delete("encuestas", poll.id)
-    update.callback_query.delete_message()
+    try:
+        update.callback_query.delete_message()
+    except:
+        print(f"No se puede eliminar el mensaje")
+
+    message = context.bot.forwardMessage(chat, int(poll.chat_id), id_mensaje, )
+    db.update_poll(poll.id, poll.votes, message.message_id)
     try:
         context.bot.deleteMessage(chat, id_mensaje)
-        # print(f"{persona.apodo} con id {persona.id} tiene activado el bot")
     except:
         print(f"No se puede eliminar el mensaje")
     encuestas(update, context)
