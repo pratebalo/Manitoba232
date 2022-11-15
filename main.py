@@ -23,8 +23,8 @@ from random import randrange
 from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
-from utils import contacts_drive as contacts
-from src import poll, tareas, birthday, listas, tesoreria, drive, new_member
+# from utils import contacts_drive as contacts
+from src import poll, tareas, birthday, listas, tesoreria, new_member#,drive
 
 warnings.filterwarnings("ignore")
 
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     dp.add_handler(MessageHandler(Filters.poll, poll.receive_poll))
     dp.add_handler(CommandHandler('bot', poll.bot_activado))
     dp.add_handler(poll.conv_handler_encuestas)
-    dp.add_handler(drive.conv_handler_drive)
+    # dp.add_handler(drive.conv_handler_drive)
     dp.add_handler(new_member.conv_handler_start)
     dp.add_handler(MessageHandler(Filters.all, echo))
     #
