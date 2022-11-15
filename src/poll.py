@@ -67,11 +67,11 @@ def receive_poll_answer(update: Update, context: CallbackContext) -> None:
         votes.remove(int(update.poll_answer.user.id))
         db.update_poll(poll_id, votes, poll.message_id)
     else:
+        votes.append(user_id)
         votos = [poll.options[i] for i in respuesta.option_ids]
-        restantes = data[~data.id.isin(votes) & data.id != user_id].apodo.tolist()
+        restantes = data[~data.id.isin(votes)].apodo.tolist()
         logger.warning(
             f"{update.effective_user.first_name} ha votado {votos} en la encuesta {poll.question}. Restantes -> {restantes}")
-        votes.append(user_id)
         db.update_poll(poll_id, votes, poll.message_id)
 
 
