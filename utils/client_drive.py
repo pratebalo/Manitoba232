@@ -41,7 +41,7 @@ if not creds or not creds.valid:
     with open(ROOT_DIR + '/token.json', 'w') as token:
         token.write(creds.to_json())
 
-drive_service = build('drive', 'v3', credentials=creds)
+drive_service = build('drive', 'v3', credentials=creds,cache_discovery=False)
 
 
 def get_file_by_id(file_id, mimeType):
