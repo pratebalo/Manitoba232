@@ -33,7 +33,7 @@ if not creds or not creds.valid:
     with open(ROOT_DIR + '/token.json', 'w') as token:
         token.write(creds.to_json())
 
-service = build('people', 'v1', credentials=creds)
+service = build('people', 'v1', credentials=creds, cache_discovery=False)
 
 
 def update_contacts(context: CallbackContext):
