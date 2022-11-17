@@ -304,7 +304,7 @@ def eliminar_lista(update: Update, context: CallbackContext):
     id_lista = int(update.callback_query.data.replace("ELIMINAR", ""))
 
     texto = f"¿Seguro que quieres eliminar la lista?"
-    keyboard = [[InlineKeyboardButton("Eliminar", callback_data="ELIMINAR"+str(id_lista)),
+    keyboard = [[InlineKeyboardButton("Eliminar", callback_data="ELIMINAR" + str(id_lista)),
                  InlineKeyboardButton("Volver atrás", callback_data="VOLVER")]]
 
     update.callback_query.edit_message_text(texto, reply_markup=InlineKeyboardMarkup(keyboard))
@@ -357,7 +357,7 @@ def editar_lista_manual(update: Update, context: CallbackContext):
 
     poll_name = (update.message.text.split(":\n"))[1]
     lista = all_listas[all_listas.nombre == poll_name].squeeze()
-    elementos = (update.message.text.split(":\n",2))[2].split("\n")
+    elementos = (update.message.text.split(":\n", 2))[2].split("\n")
     elementos2 = [re.sub(r"^[\s]*[ ]*[0-9]*[.]*[ ]*", r"", element) for element in elementos]
     lista.elementos = elementos2
     lista.tipo_elementos = [0] * len(elementos2)
@@ -372,35 +372,37 @@ def editar_lista_manual(update: Update, context: CallbackContext):
     db.update_lista(lista)
 
 
-conv_handler_listas = ConversationHandler(
-    entry_points=[CommandHandler('listas', listas)],
-    states={
-        ELEGIR_LISTA: [
-            CallbackQueryHandler(ver_lista, pattern='^VER'),
-            CallbackQueryHandler(crear_lista, pattern='^CREAR'),
-            CallbackQueryHandler(editar_lista, pattern='^EDITAR'),
-            CallbackQueryHandler(eliminar_lista, pattern='^ELIMINAR'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR$')
-        ],
-        CREAR_LISTA1: [MessageHandler(Filters.text & ~Filters.command, crear_lista2)],
-        CREAR_LISTA2: [MessageHandler(Filters.text & ~Filters.command, end_crear_lista)],
-        EDITAR_LISTA2: [
-            CallbackQueryHandler(editar_lista_anadir, pattern='^AÑADIR$'),
-            CallbackQueryHandler(end_editar_lista_marcar, pattern='^MARCAR'),
-            CallbackQueryHandler(editar_lista_editar, pattern='^EDITAR'),
-            CallbackQueryHandler(end_editar_lista_eliminar, pattern='^ELIMINAR'),
-            CallbackQueryHandler(listas, pattern='^ATRAS'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR$')],
-        EDITAR_LISTA_A: [MessageHandler(Filters.text & ~Filters.command, end_editar_lista_anadir)],
-        EDITAR_LISTA_E: [MessageHandler(Filters.text & ~Filters.command, end_editar_lista_editar)],
-        ELIMINAR_LISTA: [
-            CallbackQueryHandler(eliminar_lista2, pattern='^ELIMINAR'),
-            CallbackQueryHandler(listas, pattern='^VOLVER')],
-        FINAL_OPTION: [
-            CallbackQueryHandler(listas, pattern='^CONTINUAR$'),
-            CallbackQueryHandler(editar_lista, pattern='^CONTINUAR_EDITAR$'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR')],
+def get_conv_handler_listas():
+    conv_handler_listas = ConversationHandler(
+        entry_points=[CommandHandler('listas', listas)],
+        states={
+            ELEGIR_LISTA: [
+                CallbackQueryHandler(ver_lista, pattern='^VER'),
+                CallbackQueryHandler(crear_lista, pattern='^CREAR'),
+                CallbackQueryHandler(editar_lista, pattern='^EDITAR'),
+                CallbackQueryHandler(eliminar_lista, pattern='^ELIMINAR'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR$')
+            ],
+            CREAR_LISTA1: [MessageHandler(Filters.text & ~Filters.command, crear_lista2)],
+            CREAR_LISTA2: [MessageHandler(Filters.text & ~Filters.command, end_crear_lista)],
+            EDITAR_LISTA2: [
+                CallbackQueryHandler(editar_lista_anadir, pattern='^AÑADIR$'),
+                CallbackQueryHandler(end_editar_lista_marcar, pattern='^MARCAR'),
+                CallbackQueryHandler(editar_lista_editar, pattern='^EDITAR'),
+                CallbackQueryHandler(end_editar_lista_eliminar, pattern='^ELIMINAR'),
+                CallbackQueryHandler(listas, pattern='^ATRAS'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR$')],
+            EDITAR_LISTA_A: [MessageHandler(Filters.text & ~Filters.command, end_editar_lista_anadir)],
+            EDITAR_LISTA_E: [MessageHandler(Filters.text & ~Filters.command, end_editar_lista_editar)],
+            ELIMINAR_LISTA: [
+                CallbackQueryHandler(eliminar_lista2, pattern='^ELIMINAR'),
+                CallbackQueryHandler(listas, pattern='^VOLVER')],
+            FINAL_OPTION: [
+                CallbackQueryHandler(listas, pattern='^CONTINUAR$'),
+                CallbackQueryHandler(editar_lista, pattern='^CONTINUAR_EDITAR$'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR')],
 
-    },
-    fallbacks=[CommandHandler('listas', listas)],
-)
+        },
+        fallbacks=[CommandHandler('listas', listas)],
+    )
+    return conv_handler_listas

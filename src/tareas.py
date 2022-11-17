@@ -96,7 +96,8 @@ def ver_tarea(update: Update, context: CallbackContext):
     data = context.user_data["data"]
     pos_tarea = int(update.callback_query.data.replace("VER", ""))
     tarea = all_tareas.iloc[pos_tarea]
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} seleccionó ver la tarea '{tarea.descripcion}'")
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name} seleccionó ver la tarea '{tarea.descripcion}'")
     texto = f"{update.effective_user.first_name} ha solicitado ver la tarea:\n" + tarea_to_text(tarea, data)
 
     keyboard = [[InlineKeyboardButton("Continuar", callback_data=str("CONTINUAR")),
@@ -114,7 +115,8 @@ def crear_tarea(update: Update, context: CallbackContext):
 
 
 def elegir_fecha(update: Update, context: CallbackContext):
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha introducido la descripcion: {update.message.text}")
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name} ha introducido la descripcion: {update.message.text}")
     context.user_data["descripcion"] = update.message.text
     context.bot.deleteMessage(update.message.chat_id, update.message.message_id)
     context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
@@ -137,7 +139,8 @@ def elegir_fecha2(update: Update, context: CallbackContext):
         result = result.strftime("%d/%m/%Y")
         context.user_data["fecha"] = result
 
-        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha elegido la fecha {result}")
+        logger.warning(
+            f"{update.effective_chat.type} -> {update.effective_user.first_name} ha elegido la fecha {result}")
         keyboard = []
         part_keyboard = []
         data = context.user_data["data"]
@@ -171,7 +174,8 @@ def asignar_persona2(update: Update, context: CallbackContext):
 
     query.edit_message_text(parse_mode="HTML", reply_markup=reply_markup,
                             text="<b>Creando tarea</b>\nPersona asignada. ¿Quieres asignarla a alguien más?")
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha asignado a {query.data} a la tarea")
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name} ha asignado a {query.data} a la tarea")
     return CREAR_TAREA4
 
 
@@ -235,7 +239,8 @@ def eliminar_tarea(update: Update, context: CallbackContext):
     tarea = all_tareas.iloc[pos_tarea]
     db.delete("tareas", tarea.id)
     data = context.user_data["data"]
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name}  ha eliminado la tarea \n{tarea_to_text(tarea, data)}")
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name}  ha eliminado la tarea \n{tarea_to_text(tarea, data)}")
     texto = f"{update.effective_user.first_name} ha eliminado la tarea \n<b>{tarea_to_text(tarea, data)}</b>"
 
     keyboard = [[InlineKeyboardButton("Continuar", callback_data=str("CONTINUAR")),
@@ -254,7 +259,8 @@ def completar_tarea(update: Update, context: CallbackContext):
     tarea.completada = True
     db.update_tarea(tarea)
     data = context.user_data["data"]
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name}  ha completado la tarea \n{tarea_to_text(tarea, data)}")
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name}  ha completado la tarea \n{tarea_to_text(tarea, data)}")
     texto = f"<a href='tg://user?id={update.effective_user.id}'>{update.effective_user.first_name}</a> ha completado la tarea!!!!!! \n<b>{tarea_to_text(tarea, data)}</b>"
 
     query.delete_message()
@@ -288,26 +294,28 @@ def terminar(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-conv_handler_tareas = ConversationHandler(
-    entry_points=[CommandHandler('tareas', tareas)],
-    states={
-        ELEGIR_TAREA: [
-            CallbackQueryHandler(ver_tarea, pattern='^VER'),
-            CallbackQueryHandler(crear_tarea, pattern='^CREAR'),
-            CallbackQueryHandler(editar_tarea, pattern='^EDITAR'),
-            CallbackQueryHandler(eliminar_tarea, pattern='^ELIMINAR'),
-            CallbackQueryHandler(completar_tarea, pattern='^COMPLETAR'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR')
-        ],
-        CREAR_TAREA1: [MessageHandler(Filters.text & ~Filters.command, elegir_fecha)],
-        CREAR_TAREA2: [CallbackQueryHandler(elegir_fecha2)],
-        CREAR_TAREA3: [CallbackQueryHandler(asignar_persona2)],
-        CREAR_TAREA4: [CallbackQueryHandler(end_creacion, pattern='^NO$'),
-                       CallbackQueryHandler(asignar_persona2)],
-        FINAL_OPTION: [
-            CallbackQueryHandler(tareas, pattern='^CONTINUAR$'),
-            CallbackQueryHandler(editar_tarea, pattern='^CONTINUAR_EDITAR$'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR$')],
-    },
-    fallbacks=[CommandHandler('tareas', tareas)],
-)
+def get_conv_handler_tareas():
+    conv_handler_tareas = ConversationHandler(
+        entry_points=[CommandHandler('tareas', tareas)],
+        states={
+            ELEGIR_TAREA: [
+                CallbackQueryHandler(ver_tarea, pattern='^VER'),
+                CallbackQueryHandler(crear_tarea, pattern='^CREAR'),
+                CallbackQueryHandler(editar_tarea, pattern='^EDITAR'),
+                CallbackQueryHandler(eliminar_tarea, pattern='^ELIMINAR'),
+                CallbackQueryHandler(completar_tarea, pattern='^COMPLETAR'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR')
+            ],
+            CREAR_TAREA1: [MessageHandler(Filters.text & ~Filters.command, elegir_fecha)],
+            CREAR_TAREA2: [CallbackQueryHandler(elegir_fecha2)],
+            CREAR_TAREA3: [CallbackQueryHandler(asignar_persona2)],
+            CREAR_TAREA4: [CallbackQueryHandler(end_creacion, pattern='^NO$'),
+                           CallbackQueryHandler(asignar_persona2)],
+            FINAL_OPTION: [
+                CallbackQueryHandler(tareas, pattern='^CONTINUAR$'),
+                CallbackQueryHandler(editar_tarea, pattern='^CONTINUAR_EDITAR$'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR$')],
+        },
+        fallbacks=[CommandHandler('tareas', tareas)],
+    )
+    return conv_handler_tareas

@@ -179,13 +179,14 @@ def ver_encuesta(update: Update, context: CallbackContext):
         update.callback_query.delete_message()
     except:
         print(f"No se puede eliminar el mensaje")
+    message = context.bot.forwardMessage(update.effective_chat.id, chat, id_mensaje, )
+    if update.effective_chat.id == chat:
+        db.update_poll(poll.id, poll.votes, message.message_id)
+        try:
+            context.bot.deleteMessage(chat, id_mensaje)
+        except:
+            print(f"No se puede eliminar el mensaje")
 
-    message = context.bot.forwardMessage(chat, int(poll.chat_id), id_mensaje, )
-    db.update_poll(poll.id, poll.votes, message.message_id)
-    try:
-        context.bot.deleteMessage(chat, id_mensaje)
-    except:
-        print(f"No se puede eliminar el mensaje")
     encuestas(update, context)
 
 
@@ -231,19 +232,21 @@ def finalizar_encuesta(update: Update, context: CallbackContext):
     encuestas(update, context)
 
 
-conv_handler_encuestas = ConversationHandler(
-    entry_points=[CommandHandler('encuestas', encuestas)],
-    states={
-        ELEGIR_ENCUESTA: [
-            CallbackQueryHandler(ver_encuesta, pattern='^VER'),
-            CallbackQueryHandler(eliminar_encuesta, pattern='^ELIMINAR'),
-            CallbackQueryHandler(finalizar_encuesta, pattern='^FINALIZAR'),
-            CallbackQueryHandler(democracia, pattern='^DEMOCRACIA'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR$')
-        ],
-        FINAL_OPTION: [
-            CallbackQueryHandler(encuestas, pattern='^CONTINUAR$'),
+def get_conv_handler_encuestas():
+    conv_handler_encuestas = ConversationHandler(
+        entry_points=[CommandHandler('encuestas', encuestas)],
+        states={
+            ELEGIR_ENCUESTA: [
+                CallbackQueryHandler(ver_encuesta, pattern='^VER'),
+                CallbackQueryHandler(eliminar_encuesta, pattern='^ELIMINAR'),
+                CallbackQueryHandler(finalizar_encuesta, pattern='^FINALIZAR'),
+                CallbackQueryHandler(democracia, pattern='^DEMOCRACIA'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR$')
+            ],
+            FINAL_OPTION: [
+                CallbackQueryHandler(encuestas, pattern='^CONTINUAR$'),
 
-            CallbackQueryHandler(terminar, pattern='^TERMINAR')]},
-    fallbacks=[CommandHandler('encuestas', encuestas)],
-)
+                CallbackQueryHandler(terminar, pattern='^TERMINAR')]},
+        fallbacks=[CommandHandler('encuestas', encuestas)]
+    )
+    return conv_handler_encuestas

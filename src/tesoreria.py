@@ -138,20 +138,22 @@ def terminar(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-conv_handler_tesoreria = ConversationHandler(
-    entry_points=[CommandHandler('tesoreria', tesoreria)],
-    states={
-        OPCION: [CallbackQueryHandler(terminar, pattern='^TERMINAR$'),
-                 CallbackQueryHandler(pagar, pattern='^PAGO$'),
-                 CallbackQueryHandler(bote),
-                 ],
-        BOTE: [MessageHandler(Filters.text & ~Filters.command, bote2)],
-        BOTE2: [MessageHandler(Filters.text & ~Filters.command, bote3)],
-        PAGAR: [CallbackQueryHandler(terminar, pattern='^TERMINAR$'),
-                CallbackQueryHandler(terminar_pagar, pattern='^PAGAR')],
-        FINAL_OPTION: [
-            CallbackQueryHandler(pagar, pattern='^CONTINUAR$'),
-            CallbackQueryHandler(terminar, pattern='^TERMINAR')],
-    },
-    fallbacks=[CommandHandler('tesoreria', tesoreria)],
-)
+def get_conv_handler_tesoreria():
+    conv_handler_tesoreria = ConversationHandler(
+        entry_points=[CommandHandler('tesoreria', tesoreria)],
+        states={
+            OPCION: [CallbackQueryHandler(terminar, pattern='^TERMINAR$'),
+                     CallbackQueryHandler(pagar, pattern='^PAGO$'),
+                     CallbackQueryHandler(bote),
+                     ],
+            BOTE: [MessageHandler(Filters.text & ~Filters.command, bote2)],
+            BOTE2: [MessageHandler(Filters.text & ~Filters.command, bote3)],
+            PAGAR: [CallbackQueryHandler(terminar, pattern='^TERMINAR$'),
+                    CallbackQueryHandler(terminar_pagar, pattern='^PAGAR')],
+            FINAL_OPTION: [
+                CallbackQueryHandler(pagar, pattern='^CONTINUAR$'),
+                CallbackQueryHandler(terminar, pattern='^TERMINAR')],
+        },
+        fallbacks=[CommandHandler('tesoreria', tesoreria)],
+    )
+    return conv_handler_tesoreria

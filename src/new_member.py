@@ -157,14 +157,16 @@ def left_member(update: Update, context: CallbackContext):
     db.delete("data", member.id)
 
 
-conv_handler_start = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
-    states={
-        ELEGIR_NOMBRE: [MessageHandler(Filters.text & ~Filters.command, elegir_apellidos)],
-        ELEGIR_APELLIDO: [MessageHandler(Filters.text & ~Filters.command, elegir_mote)],
-        ELEGIR_MOTE: [MessageHandler(Filters.text & ~Filters.command, elegir_genero)],
-        ELEGIR_GENERO: [CallbackQueryHandler(elegir_fecha)],
-        ELEGIR_FECHA: [CallbackQueryHandler(elegir_fecha2)],
-    },
-    fallbacks=[CommandHandler('start', start)],
-)
+def get_conv_handler_start():
+    conv_handler_start = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            ELEGIR_NOMBRE: [MessageHandler(Filters.text & ~Filters.command, elegir_apellidos)],
+            ELEGIR_APELLIDO: [MessageHandler(Filters.text & ~Filters.command, elegir_mote)],
+            ELEGIR_MOTE: [MessageHandler(Filters.text & ~Filters.command, elegir_genero)],
+            ELEGIR_GENERO: [CallbackQueryHandler(elegir_fecha)],
+            ELEGIR_FECHA: [CallbackQueryHandler(elegir_fecha2)],
+        },
+        fallbacks=[CommandHandler('start', start)],
+    )
+    return conv_handler_start

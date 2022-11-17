@@ -167,14 +167,16 @@ def set_birthday5(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-conv_handler_birthday = ConversationHandler(
-    entry_points=[CommandHandler('setcumple', set_birthday)],
-    states={
-        CUMPLE1: [CallbackQueryHandler(set_birthday2)],
-        CUMPLE2: [MessageHandler(Filters.text & ~Filters.command, set_birthday3)],
-        CUMPLE3: [MessageHandler(Filters.text & ~Filters.command, set_birthday4)],
-        CUMPLE4: [MessageHandler(Filters.sticker & ~Filters.command, set_birthday5)],
+def get_conv_handler_birthday():
+    conv_handler_birthday = ConversationHandler(
+        entry_points=[CommandHandler('setcumple', set_birthday)],
+        states={
+            CUMPLE1: [CallbackQueryHandler(set_birthday2)],
+            CUMPLE2: [MessageHandler(Filters.text & ~Filters.command, set_birthday3)],
+            CUMPLE3: [MessageHandler(Filters.text & ~Filters.command, set_birthday4)],
+            CUMPLE4: [MessageHandler(Filters.sticker & ~Filters.command, set_birthday5)],
 
-    },
-    fallbacks=[CommandHandler('setcumple', set_birthday)],
-)
+        },
+        fallbacks=[CommandHandler('setcumple', set_birthday)],
+    )
+    return conv_handler_birthday
