@@ -1,5 +1,6 @@
 import logging
-import os
+from decouple import config
+
 
 from telegram.ext import (
     CommandHandler,
@@ -12,7 +13,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Keyboar
 
 from utils import database as db
 
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
