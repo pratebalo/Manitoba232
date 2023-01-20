@@ -11,7 +11,7 @@ import pandas as pd
 import logging
 from utils import database as db
 import random
-import os
+from decouple import config
 from utils import client_drive
 from datetime import date
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY
@@ -19,7 +19,7 @@ from telegram_bot_calendar import DetailedTelegramCalendar, DAY
 # Stages
 DRIVE1, DRIVE2, DRIVE3 = range(3)
 
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logging.getLogger("drive")
 
 

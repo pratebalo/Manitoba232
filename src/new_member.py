@@ -9,14 +9,15 @@ from telegram.ext import (
 )
 import logging
 from utils import database as db
-import os
+from decouple import config
+
 from datetime import date, datetime
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY, YEAR
 
 # Stages
 ELEGIR_NOMBRE, ELEGIR_APELLIDO, ELEGIR_MOTE, ELEGIR_GENERO, ELEGIR_FECHA, ELEGIR_FECHA2, FINAL_OPTION = range(7)
 
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logging.getLogger("new_member")
 
 your_translation_months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre",

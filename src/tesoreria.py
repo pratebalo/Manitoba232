@@ -11,13 +11,13 @@ from datetime import datetime
 import logging
 from utils import database as db
 import re
-import os
+from decouple import config
 
 # Stages
 OPCION, BOTE, BOTE2, PAGAR, FINAL_OPTION = range(5)
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
-ID_TESORERIA = int(os.environ.get("ID_TESORERIA"))
-ID_ADMIN = int(os.environ.get("ID_ADMIN"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
+ID_TESORERIA = int(config("ID_TESORERIA"))
+ID_ADMIN = int(config("ID_ADMIN"))
 logger = logging.getLogger("tesoreria")
 
 
