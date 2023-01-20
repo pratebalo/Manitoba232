@@ -11,11 +11,13 @@ import pandas as pd
 from datetime import datetime
 import logging
 from utils import database as db
-import os, re
+import re
+from decouple import config
+
 
 ELEGIR_LISTA, CREAR_LISTA1, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, \
 ELIMINAR_LISTA, FINAL_OPTION = range(9)
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logging.getLogger("listas")
 
 
