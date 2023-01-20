@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from utils import gillweb
 from telegram.ext import CallbackContext
 
-# If modifying these scopes, delete the file token.json.
+# If modifying these scopes, delete the file token_drive.json.
 SCOPES = ['https://www.googleapis.com/auth/contacts']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 
@@ -19,8 +19,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("contacts_drive")
-if os.path.exists(ROOT_DIR + '/token.json'):
-    creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
+if os.path.exists(ROOT_DIR + '/token_drive.json'):
+    creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token_drive.json',
                                                   SCOPES)
 # If there are no (valid) credentials available, let the user log in.
 if not creds or not creds.valid:
@@ -30,7 +30,7 @@ if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(ROOT_DIR + '/credentials.json', SCOPES)
         creds = flow.run_local_server(port=0)
     # Save the credentials for the next run
-    with open(ROOT_DIR + '/token.json', 'w') as token:
+    with open(ROOT_DIR + '/token_drive.json', 'w') as token:
         token.write(creds.to_json())
 
 service = build('people', 'v1', credentials=creds, cache_discovery=False)

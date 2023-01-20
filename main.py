@@ -23,8 +23,8 @@ from random import randrange
 from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
-# from utils import contacts_drive as contacts
-from src import poll, tareas, birthday, listas, tesoreria, new_member#,drive
+from utils import contacts_drive as contacts
+from src import poll, tareas, birthday, listas, tesoreria, new_member, drive
 
 warnings.filterwarnings("ignore")
 
@@ -43,11 +43,13 @@ ID_TELEGRAM = 777000
 load_dotenv()
 TOKEN = os.environ.get("TOKEN")
 mode = os.environ.get("mode")
-def run(updater):
-        updater.start_polling()
-        updater.idle()
 
-    
+
+def run(updater):
+    updater.start_polling()
+    updater.idle()
+
+
 def muditos(context: CallbackContext):
     data = db.select("data")
     hoy = datetime.today()
@@ -353,12 +355,12 @@ if __name__ == "__main__":
     dp.add_handler(MessageHandler(Filters.poll, poll.receive_poll))
     dp.add_handler(CommandHandler('bot', poll.bot_activado))
     dp.add_handler(poll.get_conv_handler_encuestas())
-    # dp.add_handler(drive.conv_handler_drive)
+    dp.add_handler(drive.conv_handler_drive)
     dp.add_handler(new_member.get_conv_handler_start())
     dp.add_handler(MessageHandler(Filters.all, echo))
     #
     job.run_daily(birthday.birthday, time(7, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
-    # job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
+    job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muditos, time(17, 54, 00, 000000))
     job.run_daily(tareas.recoradar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')), days=(1,))
     logger.info(f"Iniciando el bot")
