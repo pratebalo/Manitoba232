@@ -133,6 +133,15 @@ def echo(update: Update, context: CallbackContext):
                 new_member.left_member(update, context)
                 logger.info(
                     f"{update.effective_chat.type} -> {update.message.left_chat_member} ha salido del grupo ")
+            elif update.message.pinned_message:
+                logger.info(
+                    f"{update.effective_chat.type} -> {fila.apodo} ha anclado un mensaje")
+            elif update.message.voice_chat_participants_invited:
+                logger.info(
+                    f"{update.effective_chat.type} -> {fila.apodo} ha metido a la llamada a {update.message.voice_chat_participants_invited.users.username}")
+            elif update.message.pinned_message:
+                logger.info(
+                    f"{update.effective_chat.type} -> {fila.apodo} ha anclado un mensaje")
             else:
                 logger.info(f"{update.effective_chat.type} -> update.message desconocido:  {update.message}")
             db.update_data1(fila)
