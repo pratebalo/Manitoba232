@@ -11,10 +11,11 @@ from datetime import datetime
 from gtts import gTTS
 import pandas as pd
 from utils import database as db
-import os, random
+import random
+from decouple import config
 
 CUMPLE1, CUMPLE2, CUMPLE3, CUMPLE4 = range(4)
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 STICKERS = ["CAACAgIAAxkBAAEDfgNhugP6zcKUVHjHDThT6UFcw7Ex7AACPQEAAiI3jgRzp-LtkvRpKCME",
             "CAACAgIAAxkBAAEDfgVhugQphnj0lZMlP6wgXvp7tVp4ogACCwEAAvcCyA_F9DuYlapx2yME",
             "CAACAgIAAxkBAAEDfgdhugQt8geB2KWFbDQ0TA2IXbx7ZQACNQADO2AkFOi0JbQQZiMhIwQ",
