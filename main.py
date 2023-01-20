@@ -41,8 +41,8 @@ ID_CONVERSACIONES = int(config("ID_CONVERSACIONES"))
 
 ID_TELEGRAM = 777000
 
-TOKEN = int(config("TOKEN"))
-mode = int(config("mode"))
+TOKEN = config("TOKEN")
+mode = config("mode")
 def run(updater):
         updater.start_polling()
         updater.idle()
