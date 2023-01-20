@@ -4,7 +4,7 @@ import logging
 import requests
 import pytz
 import pandas as pd
-import os
+from decouple import config
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
 from telegram.ext import (
     CommandHandler,
@@ -36,13 +36,13 @@ logging.getLogger('apscheduler').propagate = False
 LOQUENDO_1, LOQUENDO_2 = range(2)
 ESTADO_UNO, ESTADO_DOS = range(2)
 
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
-ID_CONVERSACIONES = int(os.environ.get("ID_CONVERSACIONES"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
+ID_CONVERSACIONES = int(config("ID_CONVERSACIONES"))
 
 ID_TELEGRAM = 777000
-load_dotenv()
-TOKEN = os.environ.get("TOKEN")
-mode = os.environ.get("mode")
+
+TOKEN = int(config("TOKEN"))
+mode = int(config("mode"))
 def run(updater):
         updater.start_polling()
         updater.idle()
