@@ -11,14 +11,15 @@ import pandas as pd
 import logging
 from utils import database as db
 import random
-import os
+from decouple import config
+
 from datetime import date
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY
 
 # Stages
 ELEGIR_TAREA, CREAR_TAREA1, CREAR_TAREA2, CREAR_TAREA3, CREAR_TAREA4, CREAR_TAREA5, FINAL_OPTION = range(7)
 
-ID_MANITOBA = int(os.environ.get("ID_MANITOBA"))
+ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logging.getLogger("tareas")
 
 your_translation_months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre",
