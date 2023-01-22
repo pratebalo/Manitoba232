@@ -19,16 +19,12 @@ DICT = {
     'application/vnd.google-apps.jam': ''}
 FOLDER_BASE = '0AHBcqK_64EhOUk9PVA'
 
-# If modifying these scopes, delete the file token_drive.json.
-SCOPES = ['https://www.googleapis.com/auth/drive']
+SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts']
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
-# The file token_drive.json stores the user's access and refresh tokens, and is
-# created automatically when the authorization flow completes for the first
-# time.
-if os.path.exists(ROOT_DIR + '/token_drive.json'):
-    creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token_drive.json',
+if os.path.exists(ROOT_DIR + '/token.json'):
+    creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)
 # If there are no (valid) credentials available, let the user log in.
 if not creds or not creds.valid:
@@ -38,7 +34,7 @@ if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(ROOT_DIR + '/credentials.json', SCOPES)
         creds = flow.run_local_server(port=0)
     # Save the credentials for the next run
-    with open(ROOT_DIR + '/token_drive.json', 'w') as token:
+    with open(ROOT_DIR + '/token.json', 'w') as token:
         token.write(creds.to_json())
 
 drive_service = build('drive', 'v3', credentials=creds,cache_discovery=False)
@@ -159,15 +155,7 @@ def upload_file(path, parent_id=None):
         file = drive_service.files().create(body=file_metadata,
                                             media_body=media,
                                             fields='id').execute()
+        print(file.get('id'))
     except HttpError:
         print('corrupted file')
         pass
-    print(file.get('id'))
-
-
-if __name__ == '__main__':
-    pd.options.display.width = 0
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', None)
-    pd.set_option('display.max_colwidth', -1)

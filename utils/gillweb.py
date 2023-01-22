@@ -16,6 +16,8 @@ password = "1234Aa"
 def get_data_gillweb():
     data = download_data_gillweb()
 
+    data = filter_data(data)
+
     data2 = data[(data.father_name != "") & (data.father_email != "")]. \
         groupby(["father_name", "father_surname"]).agg(
         {"complete_name": lambda x: "Padre de " + ", ".join(x),
@@ -72,15 +74,16 @@ def download_data_gillweb():
 
     url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
     csv = requests.get(url).text
-    # print()
-    # with open("data.csv", 'r', encoding="utf-8") as csv_file:
-    #     csv = csv_file.read()
 
     data = pd.read_csv(StringIO(csv), sep=";", encoding="utf-8", converters={'father_name': str, 'father_surname': str,
                                                                              'mother_name': str, 'mother_surname': str,
                                                                              'father_email': str, 'mother_email': str,
                                                                              'father_phone': str, 'mother_phone': str})
+    pd.to_datetime(data['birth_date'])
+    return data
 
+
+def filter_data(data):
     data = data[
         ["nombre_dni", "surname", "father_name", "father_surname", "father_phone", "father_email", "mother_name",
          "mother_surname", "mother_phone", "mother_email", "scout_subsection", "role"]]
@@ -96,4 +99,14 @@ def download_data_gillweb():
     return data
 
 
-
+def get_listed_sections():
+    data = download_data_gillweb()
+    data = data[["nombre_dni", "surname", "scout_subsection", "birth_date", "scouter_section"]]
+    data['subsection'] = data.scout_subsection.str.replace(' 1', '').str.replace(' 2', '').str.replace(' 3', '')
+    sections = []
+    for subsection, df_subsection in data.groupby("subsection"):
+        df_subsection.sort_values("birth_date", ascending=True, inplace=True)
+        df_subsection.drop(['subsection'], axis=1, inplace=True)
+        if subsection != "Scouter":
+            df_subsection.drop(['scouter_section'], axis=1, inplace=True)
+        sections.append([subsection, df_subsection])
