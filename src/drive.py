@@ -109,13 +109,18 @@ def drive_descargar(update: Update, context: CallbackContext):
     doc = client_drive.get_file(file)
     context.bot.sendDocument(chat_id=chat_id, document=doc, timeout=2000)
 
+def terminar_drive(update: Update, context: CallbackContext):
+    update.callback_query.delete_message()
+
+    return ConversationHandler.END
 
 conv_handler_drive = ConversationHandler(
     entry_points=[CommandHandler('drive', drive)],
     states={
         DRIVE1: [
             CallbackQueryHandler(drive2, pattern='^ABRIR'),
-            CallbackQueryHandler(drive_descargar, pattern='^DESCARGAR')
+            CallbackQueryHandler(drive_descargar, pattern='^DESCARGAR'),
+            CallbackQueryHandler(terminar_drive, pattern='^TERMINAR')
         ],
         DRIVE2: [
             CallbackQueryHandler(drive2, pattern='^ABRIR'),
