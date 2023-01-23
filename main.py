@@ -17,6 +17,7 @@ from telegram.ext import (
     Updater
 )
 from datetime import datetime, time, timedelta
+from utils.sheets_drive import generate_sheet_sections
 from gtts import gTTS
 from PIL import Image, ImageDraw
 from random import randrange
@@ -24,7 +25,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
 from utils import contacts_drive as contacts
-from src import poll, tareas, birthday, listas, tesoreria, new_member,drive
+from src import poll, tareas, birthday, listas, tesoreria, new_member, drive
 
 warnings.filterwarnings("ignore")
 
@@ -42,9 +43,11 @@ ID_CONVERSACIONES = int(config("ID_CONVERSACIONES"))
 ID_TELEGRAM = 777000
 
 TOKEN = config("TOKEN")
+
+
 def run(updater):
-        updater.start_polling()
-        updater.idle()
+    updater.start_polling()
+    updater.idle()
 
 
 def muditos(context: CallbackContext):
@@ -300,6 +303,16 @@ def end_pietrobot(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
+def listados(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name} ha entrado en el comando listados")
+    generate_sheet_sections()
+    context.bot.sendMessage(chat_id,
+                            text='https://docs.google.com/spreadsheets/d/1uPKEj1s7Y4TPcyTImGrkmjl4POGM6Mryk3Ebn8L8lxM/')
+    return ConversationHandler.END
+
+
 if __name__ == "__main__":
     load_dotenv()
     my_bot = Bot(token=TOKEN)
@@ -347,6 +360,7 @@ if __name__ == "__main__":
     dp.add_handler(CommandHandler('cumples', birthday.get_birthday))
     dp.add_handler(CommandHandler('allcumples', birthday.get_all_birthday))
     dp.add_handler(CommandHandler('felicitar', birthday.birthday2))
+    dp.add_handler(CommandHandler('listados', listados))
 
     dp.add_handler(PollAnswerHandler(poll.receive_poll_answer))
     dp.add_handler(MessageHandler(Filters.poll, poll.receive_poll))

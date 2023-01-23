@@ -10,7 +10,8 @@ from utils import gillweb
 from telegram.ext import CallbackContext
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/contacts']
+SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts',
+          'https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'keys.json'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))

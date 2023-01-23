@@ -19,7 +19,8 @@ DICT = {
     'application/vnd.google-apps.jam': ''}
 FOLDER_BASE = '0AHBcqK_64EhOUk9PVA'
 
-SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts']
+SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts',
+          'https://www.googleapis.com/auth/spreadsheets']
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
@@ -37,7 +38,7 @@ if not creds or not creds.valid:
     with open(ROOT_DIR + '/token.json', 'w') as token:
         token.write(creds.to_json())
 
-drive_service = build('drive', 'v3', credentials=creds,cache_discovery=False)
+drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
 
 
 def get_file_by_id(file_id, mimeType):

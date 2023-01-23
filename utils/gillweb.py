@@ -80,6 +80,7 @@ def download_data_gillweb():
                                                                              'father_email': str, 'mother_email': str,
                                                                              'father_phone': str, 'mother_phone': str})
     pd.to_datetime(data['birth_date'])
+    data.fillna('', inplace=True)
     return data
 
 
@@ -101,12 +102,28 @@ def filter_data(data):
 
 def get_listed_sections():
     data = download_data_gillweb()
-    data = data[["nombre_dni", "surname", "scout_subsection", "birth_date", "scouter_section"]]
+    data = data[["nombre_dni", "surname", "scout_subsection", "scouter_section", "birth_date"]]
     data['subsection'] = data.scout_subsection.str.replace(' 1', '').str.replace(' 2', '').str.replace(' 3', '')
+    data['scouter_section'] = data.scouter_section.str.replace('Educador ', '').str.replace('de ', '').str.replace(
+        'Sección Scout', 'Troperos')
+    data['scouter_section'] = data.scouter_section.replace('', 'Sin unidad asignada')
+
+    data.scouter_section = data.scouter_section.astype("category")
+    data.scouter_section = data.scouter_section.cat.set_categories(
+        ['Castores', 'Lobatos', 'Troperos', 'Escultas', 'Rover', 'Apoyo', 'Sin unidad asignada'])
+
     sections = []
     for subsection, df_subsection in data.groupby("subsection"):
         df_subsection.sort_values("birth_date", ascending=True, inplace=True)
         df_subsection.drop(['subsection'], axis=1, inplace=True)
-        if subsection != "Scouter":
+        if subsection == "Scouter":
+            df_subsection.drop(['scout_subsection'], axis=1, inplace=True)
+            df_subsection.sort_values(['scouter_section', 'birth_date'], ascending=[True, True], inplace=True)
+        else:
             df_subsection.drop(['scouter_section'], axis=1, inplace=True)
+
+        df_subsection.columns = ['Nombre', 'Apellidos', 'Sección', 'Fecha_de_nacimiento']
         sections.append([subsection, df_subsection])
+    sections = sorted(sections, key=lambda x: x[1].Fecha_de_nacimiento.iloc[0], reverse=True)
+
+    return sections
