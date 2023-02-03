@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 from io import StringIO
 from unidecode import unidecode
+from decouple import config
 
 desired_width = 320
 
@@ -9,8 +10,9 @@ pd.set_option('display.width', desired_width)
 
 pd.set_option('display.max_columns', 100)
 pd.set_option('display.max_rows', 200)
-user = "LYDIA222"
-password = "1234Aa"
+
+user = int(config("USER_GILLWEB"))
+password = int(config("PASS_GILLWEB"))
 
 
 def get_data_gillweb():
@@ -69,18 +71,26 @@ def get_gillweb_csv():
 
 
 def download_data_gillweb():
-    url = "https://www.gillweb.es/core/api.php?controller=user&action=login"
-    token = requests.post(url, data={"login": "LYDIA222", "password": "1234Aa"}, timeout=1).json()["data"]
+    data = []
+    for i in range(0, 10):
+        try:
+            url = "https://www.gillweb.es/core/api.php?controller=user&action=login"
+            token = requests.post(url, data={"login": "LYDIA222", "password": "1234Aa"}, timeout=1).json()["data"]
 
-    url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
-    csv = requests.get(url).text
+            url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
+            csv = requests.get(url).text
 
-    data = pd.read_csv(StringIO(csv), sep=";", encoding="utf-8", converters={'father_name': str, 'father_surname': str,
-                                                                             'mother_name': str, 'mother_surname': str,
-                                                                             'father_email': str, 'mother_email': str,
-                                                                             'father_phone': str, 'mother_phone': str})
-    pd.to_datetime(data['birth_date'])
-    data.fillna('', inplace=True)
+            data = pd.read_csv(StringIO(csv), sep=";", encoding="utf-8",
+                               converters={'father_name': str, 'father_surname': str,
+                                           'mother_name': str, 'mother_surname': str,
+                                           'father_email': str, 'mother_email': str,
+                                           'father_phone': str, 'mother_phone': str})
+            pd.to_datetime(data['birth_date'])
+            data.fillna('', inplace=True)
+            break
+        except requests.Timeout:
+            continue
+
     return data
 
 

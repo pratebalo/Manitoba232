@@ -130,7 +130,7 @@ def delete_sheet(gsheet_id, sheet_id):
         print(e)
 
 
-def clear_worksheet(gsheet_id, sheet_name):
+def clear_sheet(gsheet_id, sheet_name):
     try:
         response = spreadsheets.values().clear(
             spreadsheetId=gsheet_id,
@@ -166,7 +166,7 @@ def generate_sheet_sections():
     new_name = f'Listados-{datetime.now().strftime("%d/%m/%y %H:%M")}'
     rename_file(sheet_id, new_name)
     for section, df in list_sections:
-        clear_worksheet(sheet_id, section)
+        clear_sheet(sheet_id, section)
         data = [df.columns.values.tolist()]
         data.extend(df.values.tolist())
         append_data(sheet, section, 'B2', data)

@@ -1,21 +1,13 @@
 import warnings
-import sys
 import logging
 import requests
 import pytz
 import pandas as pd
 from decouple import config
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import (
-    CommandHandler,
-    PollAnswerHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
-    CallbackContext,
-    MessageHandler,
-    Filters,
-    Updater
-)
+from telegram.ext import (CommandHandler, PollAnswerHandler, CallbackQueryHandler, ConversationHandler, CallbackContext,
+                          MessageHandler, Filters, Updater
+                          )
 from datetime import datetime, time, timedelta
 from utils.sheets_drive import generate_sheet_sections
 from gtts import gTTS
@@ -24,7 +16,7 @@ from random import randrange
 from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
-from utils import contacts_drive as contacts
+from utils import contacts_drive as contacts, menu
 from src import poll, tareas, birthday, listas, tesoreria, new_member, drive
 
 warnings.filterwarnings("ignore")
@@ -361,6 +353,7 @@ if __name__ == "__main__":
     dp.add_handler(CommandHandler('allcumples', birthday.get_all_birthday))
     dp.add_handler(CommandHandler('felicitar', birthday.birthday2))
     dp.add_handler(CommandHandler('listados', listados))
+    dp.add_handler(CommandHandler('menu', menu.update_all))
 
     dp.add_handler(PollAnswerHandler(poll.receive_poll_answer))
     dp.add_handler(MessageHandler(Filters.poll, poll.receive_poll))
