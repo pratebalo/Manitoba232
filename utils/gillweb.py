@@ -11,8 +11,8 @@ pd.set_option('display.width', desired_width)
 pd.set_option('display.max_columns', 100)
 pd.set_option('display.max_rows', 200)
 
-user = int(config("USER_GILLWEB"))
-password = int(config("PASS_GILLWEB"))
+user = config("USER_GILLWEB")
+password = config("PASS_GILLWEB")
 
 
 def get_data_gillweb():
