@@ -2,7 +2,7 @@ import psycopg2
 import pandas as pd
 from decouple import config
 
-DATABASE_URL = int(config("DATABASE_URL"))
+DATABASE_URL = config("DATABASE_URL")
 
 
 def select(table):
