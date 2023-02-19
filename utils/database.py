@@ -1,15 +1,11 @@
 import psycopg2
 import pandas as pd
-from decouple import config
-
-DATABASE_URL = config("DATABASE_URL")
 
 
 def select(table):
-    query = f"SELECT * FROM {table}" 
-    
-    
-    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot',user='postgres',password='postgres')
+    query = f"SELECT * FROM {table}"
+
+    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
     result = pd.read_sql(query, connection).sort_values(by="id", ignore_index=True)
     connection.close()
     return result
@@ -19,7 +15,7 @@ def delete(table, id):
     query = f"""DELETE FROM {table}
             WHERE id = {id}
             RETURNING *;"""
-    connection = psycopg2.connect(DATABASE_URL)
+    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
     result = pd.read_sql(query, connection)
     connection.commit()
     connection.close()
@@ -160,8 +156,8 @@ def end_poll(id):
     connect(query)
 
 
-def connect(query): 
-    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot',user='postgres',password='postgres')
+def connect(query):
+    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
