@@ -291,13 +291,17 @@ def update_shopping_list():
     shopping_list_marcha = get_shopping_list_marcha()
     final_list = pd.concat([first_week, shopping_list_marcha]).groupby(['Ingredientes', 'Medidas'],
                                                                        as_index=False).sum()
+    shoppping_day = get_shopping_day()
     data1 = [final_list.columns.values.tolist()]
     data1.extend(final_list.values.tolist())
     data2 = [second_week.columns.values.tolist()]
     data2.extend(second_week.values.tolist())
+    data3 = [shoppping_day.columns.values.tolist()]
+    data3.extend(shoppping_day.values.tolist())
     clear_sheet(ID_ACAMPADA, 'Lista_Compra')
     append_data(sheet, 'Lista_Compra', 'B2', data1)
     append_data(sheet, 'Lista_Compra', 'H2', data2)
+    append_data(sheet, 'Lista_Compra', 'L2', data3)
 
 
 def update_cantidades():
@@ -317,6 +321,44 @@ def update_cantidades():
     data_marcha.extend(cantidades_marcha.values.tolist())
     clear_sheet(ID_ACAMPADA, 'Cantidades_marcha')
     append_data(sheet, 'Cantidades_marcha', 'B2', data_marcha)
+
+
+def get_shopping_day():
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Cantidades!B2:E').execute()['values']
+    headers = x.pop(0)
+    data = pd.DataFrame(x, columns=headers).fillna('')
+    data['TOTAL'] = data['TOTAL'].replace('', 0.0).astype(float)
+    select = {}
+    for day in range(16, 31):
+        if day == 16:
+            index_start = 0
+        else:
+            index_day = data.index[data['Recetas'] == f'Día {day}'].tolist()[0]
+            index_start = data.loc[index_day + 1:][data['Ingredientes'] == ''].index[0]
+        if day == 30:
+            index_end = data.index[-1]
+        else:
+            index_day = data.index[data['Recetas'] == f'Día {day + 1}'].tolist()[0]
+            index_end = data.loc[index_day + 1:][data['Ingredientes'] == ''].index[0]
+        temp = data.iloc[index_start:index_end, :]
+        temp = temp[data['Ingredientes'].str.contains(r'\*', na=False)]
+        temp.drop(['Recetas'], axis=1, inplace=True)
+        temp = temp.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
+
+        select[f'Día {day}'] = temp
+
+    dataframes = []
+
+    for key, dataframe in select.items():
+        dataframes.append(pd.DataFrame([[key, '', '']], columns=dataframe.columns))
+
+        dataframes.append(dataframe)
+
+        dataframes.append(pd.DataFrame([['', '', '']], columns=dataframe.columns))
+
+    data = pd.concat(dataframes, ignore_index=True)
+
+    return data
 
 
 def update_all(update: Update, context: CallbackContext):
@@ -400,5 +442,6 @@ def get_conv_handler_menu():
 
 
 if __name__ == "__main__":
+    get_shopping_day()
     update_cantidades()
     update_shopping_list()
