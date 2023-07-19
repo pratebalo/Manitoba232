@@ -291,7 +291,7 @@ def update_shopping_list():
     shopping_list_marcha = get_shopping_list_marcha()
     final_list = pd.concat([first_week, shopping_list_marcha]).groupby(['Ingredientes', 'Medidas'],
                                                                        as_index=False).sum()
-    shoppping_day = get_shopping_day()
+    shoppping_day = get_all_shopping_day()
     data1 = [final_list.columns.values.tolist()]
     data1.extend(final_list.values.tolist())
     data2 = [second_week.columns.values.tolist()]
@@ -346,10 +346,46 @@ def get_shopping_day():
         temp = temp.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
 
         select[f'Día {day}'] = temp
+    return select
+
+
+def get_shopping_day_marcha():
+    fechas = get_fechas_marcha()
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Cantidades_marcha!B2:K').execute()['values']
+    headers = x.pop(0)
+    data = pd.DataFrame(x, columns=headers).fillna('')
+    cols = ['Castores', 'Manada', 'Tropa', 'Escultas', 'Rovers']
+    data[cols] = data[cols].replace('', 0.0).astype(float)
+    select = {}
+    for unidad in range(0, 5):
+        x = int(fechas[unidad][0]) - 1
+        temp = pd.concat([data.iloc[:, 0:2], data.iloc[:, unidad + 4], data.iloc[:, 3]], axis=1)
+        temp = temp[data['Ingredientes'].str.contains(r'\*', na=False)]
+        temp.drop("Recetas", axis=1, inplace=True)
+        temp = temp.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
+        temp.columns.values[2] = "TOTAL"
+        if f'Día {x}' in select:
+            temp = pd.concat([select[f'Día {x}'], temp], axis=0, ignore_index=True)
+            temp = temp.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
+
+        select[f'Día {x}'] = temp
+
+    return select
+
+
+def get_all_shopping_day():
+    select1 = get_shopping_day()
+    select2 = get_shopping_day_marcha()
+
+    for key in select1.keys():
+        if key in select2:
+            temp = pd.concat([select1[key], select2[key]], axis=0, ignore_index=True)
+            temp = temp.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
+            select1[key] = temp
 
     dataframes = []
 
-    for key, dataframe in select.items():
+    for key, dataframe in select1.items():
         dataframes.append(pd.DataFrame([[key, '', '']], columns=dataframe.columns))
 
         dataframes.append(dataframe)
@@ -442,6 +478,6 @@ def get_conv_handler_menu():
 
 
 if __name__ == "__main__":
-    get_shopping_day()
+    get_all_shopping_day()
     update_cantidades()
     update_shopping_list()
