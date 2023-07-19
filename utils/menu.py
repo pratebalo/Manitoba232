@@ -20,7 +20,8 @@ ID_ACAMPADA = '1rzVO8jNACvcynnaaAJd83nFpsEk7hbnL9XSXNFEpPO4'
 ID_VERANO = ''
 sheet = get_sheet(ID_ACAMPADA)
 
-lista_comidas = ['Desayuno', 'Almuerzo', 'Comida', 'Merienda', 'Cena']
+lista_comidas = ['Desayuno', 'Almuerzo', 'Comida', 'Merienda', 'Cena', 'Pan', 'Postre']
+columnas_excluir = ['Recetas', 'Ingredientes', 'Medidas']
 
 
 def get_recetarios():
@@ -29,12 +30,9 @@ def get_recetarios():
         x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range=f'{comida}!B1:P1000').execute()['values']
         headers = x.pop(0)
         data = pd.DataFrame(x, columns=headers).dropna(how='all')
-        data[['Castores', 'Castores_lact', 'Manada', 'Tropa', 'Escultas', 'Escultas_gluten', 'Rovers', 'Rovers_lact',
-              'Jefes', 'Jefes_vegan', 'Jefes_vegan_lact', 'Comun']] = data[
-            ['Castores', 'Castores_lact', 'Manada', 'Tropa', 'Escultas', 'Escultas_gluten', 'Rovers', 'Rovers_lact',
-             'Jefes', 'Jefes_vegan', 'Jefes_vegan_lact', 'Comun']].replace('',
-                                                                           0.0).astype(
-            float)
+        columnas_restantes = [col for col in data.columns if col not in columnas_excluir]
+
+        data[columnas_restantes] = data[columnas_restantes].replace('', 0.0).fillna(0.0).astype(float)
         merges = spreadsheets.get(spreadsheetId=ID_ACAMPADA, ranges=f'{comida}!B1:K1000').execute()['sheets'][0]
         if 'merges' in merges:
             merges = merges['merges']
@@ -51,20 +49,30 @@ def get_recetarios():
                 end = merged[pos]
             else:
                 end = pos
-            recetario[receta] = data.loc[pos:end]
-            recetario[receta].insert(4, 'Jefes_castores', recetario[receta].Jefes)
-            recetario[receta].insert(6, 'Jefes_manada', recetario[receta].Jefes)
-            recetario[receta].insert(8, 'Jefes_tropa', recetario[receta].Jefes)
-            recetario[receta].insert(11, 'Jefes_escultas', recetario[receta].Jefes)
-            recetario[receta].insert(5, 'JefesC_vegan', recetario[receta].Jefes_vegan)
-            recetario[receta].insert(8, 'JefesM_vegan', recetario[receta].Jefes_vegan)
-            recetario[receta].insert(11, 'JefesT_vegan', recetario[receta].Jefes_vegan)
-            recetario[receta].insert(15, 'JefesE_vegan', recetario[receta].Jefes_vegan)
-            recetario[receta].insert(16, 'JefesE_vegan_lact', recetario[receta].Jefes_vegan_lact)
-            recetario[receta].insert(21, 'Intendentes', recetario[receta].Jefes)
-            recetario[receta] = recetario[receta].rename(columns={'Jefes_vegan': 'JefesR_vegan'})
-            recetario[receta] = recetario[receta].rename(columns={'Jefes': 'Jefes_rover'})
-            recetario[receta].drop("Jefes_vegan_lact", axis=1, inplace=True)
+            temp = data.loc[pos:end]
+            recetario[receta] = temp.iloc[:, 0:4]
+            recetario[receta].insert(4, 'Jefes_castores', temp.Adultos)
+            recetario[receta].insert(5, 'JefesC_vegan', temp.Adultos_vegan)
+            recetario[receta].insert(6, 'Manada', temp.Manada)
+            recetario[receta].insert(7, 'Manada_lact', temp.Manada_lact)
+            recetario[receta].insert(8, 'Jefes_manada', temp.Adultos)
+            recetario[receta].insert(9, 'JefesM_vegan', temp.Adultos_vegan)
+            recetario[receta].insert(10, 'Tropa', temp.Tropa)
+            recetario[receta].insert(11, 'Tropa_lact', temp.Tropa_lact)
+            recetario[receta].insert(12, 'Jefes_tropa', temp.Adultos)
+            recetario[receta].insert(13, 'JefesT_vegan', temp.Adultos_vegan)
+            recetario[receta].insert(14, 'Escultas', temp.Adultos)
+            recetario[receta].insert(15, 'Escultas_gluten', temp.Adultos_gluten)
+            recetario[receta].insert(16, 'Jefes_escultas', temp.Adultos)
+            recetario[receta].insert(17, 'JefesE_vegan', temp.Adultos_vegan)
+            recetario[receta].insert(18, 'JefesE_vegan_lact', temp.Adultos_vegan_lact)
+            recetario[receta].insert(19, 'Rovers', temp.Adultos)
+            recetario[receta].insert(20, 'Rovers_lact', temp.Adultos_lact)
+            recetario[receta].insert(21, 'Jefes_rovers', temp.Adultos)
+            recetario[receta].insert(22, 'JefesR_vegan', temp.Adultos_vegan)
+            recetario[receta].insert(23, 'Intendentes', temp.Adultos)
+            recetario[receta].insert(24, 'Comun', temp.Comun)
+            recetario[receta].insert(25, 'Medidas', temp.Medidas)
 
         recetario_global[comida] = recetario
 
@@ -72,7 +80,7 @@ def get_recetarios():
 
 
 def get_menu_acampada():
-    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_acampada!C3:S8').execute()['values']
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!A3:11').execute()['values']
     headers = x.pop(0)
     for item in x:
         item.extend([''] * (len(headers) - len(item)))
@@ -82,7 +90,7 @@ def get_menu_acampada():
 
 
 def get_menu_marcha():
-    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!N3:Q8').execute()['values']
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!A14:D19').execute()['values']
     headers = x.pop(0)
     for item in x:
         item.extend([''] * (len(headers) - len(item)))
@@ -92,7 +100,7 @@ def get_menu_marcha():
 
 
 def get_fechas_marcha():
-    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!T4:U8').execute()['values']
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!G15:H19').execute()['values']
     lista_resultante = []
 
     for sublista in x:
@@ -105,28 +113,88 @@ def get_fechas_marcha():
     return lista_resultante
 
 
-def get_cantidades(menu, recetario, asistentes, marcha):
+def get_servicio():
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Menú_verano!K15:M17').execute()['values']
+    lista_resultante = [[x[0][0], str(int(x[0][0]) + 1)], [x[1][0], str(int(x[1][0]) + 1), int(x[1][1])],
+                        [x[2][0], str(int(x[2][0]) + 1), str(int(x[2][0]) + 2), x[2][2]]]
+
+    return lista_resultante
+
+
+def get_cantidades(menu, recetario, asistentes, marcha, servicio):
     cantidades = pd.DataFrame(
-        columns=['Recetas', 'Ingredientes', 'Castores', 'Castores_lact', 'Jefes_castores', 'JefesC_vegan', 'Manada',
-                 'Jefes_manada', 'JefesM_vegan', 'Tropa', 'Jefes_tropa', 'JefesT_vegan', 'Escultas', 'Escultas_gluten',
-                 'Jefes_escultas', 'JefesE_vegan', 'JefesE_vegan_lact', 'Rovers', 'Rovers_lact', 'Jefes_rover',
-                 'JefesR_vegan', 'Intendentes', 'Comun', 'Medidas'])
-    day = None
-    for col in menu:
-        for ix in menu.index:
-            if not menu.at[ix, col]:
+        columns=['Recetas', 'Ingredientes', 'TOTAL', 'Medidas', 'Castores', 'Manada', 'Intendentes',
+                 'Total Intendencia',
+                 'Tropa', 'Escultas', 'Rovers', 'Comun'])
+    lista = {0: [0, 4],
+             1: [4, 8],
+             2: [8, 12],
+             3: [12, 17],
+             4: [17, 21]
+             }
+    last_day = None
+    for day in menu:
+        for comida in menu.index:
+            if not menu.at[comida, day]:
                 continue
 
-            day_visitors = list(map(int, asistentes.loc[[col]].values.tolist()[0]))
-            if col != day:
-                day = col
-                new_row = [f'Día {col}', ''] + day_visitors + ['', '']
+            day_visitors = list(map(int, asistentes.loc[[day]].values.tolist()[0]))
+
+            for ix_unidad, unidad in enumerate(marcha):
+                if day in unidad:
+                    ix = unidad.index(day)
+                    match ix:
+                        case 0:
+                            if comida != 'Desayuno':
+                                dias_marcha = lista[ix_unidad]
+                                day_visitors[dias_marcha[0]:dias_marcha[1]] = [0] * (dias_marcha[1] - dias_marcha[0])
+
+                        case 1:
+                            dias_marcha = lista[ix_unidad]
+                            day_visitors[dias_marcha[0]:dias_marcha[1]] = [0] * (dias_marcha[1] - dias_marcha[0])
+                        case 2:
+                            if comida != 'Cena' and comida != 'Pan_cena':
+                                dias_marcha = lista[ix_unidad]
+                                day_visitors[dias_marcha[0]:dias_marcha[1]] = [0] * (dias_marcha[1] - dias_marcha[0])
+
+            # 24H
+            if day in servicio[0][0] and comida != 'Desayuno' or day in servicio[0][1] and comida == 'Desayuno':
+                day_visitors[lista[2][0]:lista[2][0] + 2] = [0] * 2
+
+            # 24H scout
+            if day in servicio[1][0] and comida != 'Desayuno' or day in servicio[1][1] and comida == 'Desayuno':
+                day_visitors[lista[2][0]] = day_visitors[lista[2][0]] - servicio[1][2]
+
+            if day in servicio[2][0] and comida != 'Desayuno' or day in servicio[2][1] or \
+                    day in servicio[1][1] and comida == 'Desayuno':
+                day_visitors[lista[3][0]:lista[3][0] + 2] = [0] * 2
+
+            receta = menu.at[comida, day]
+            if 'Pan' in comida:
+                new = recetario['Pan'][receta].copy()
+            else:
+                new = recetario[comida][receta].copy()
+
+            if day != last_day:
+                day_visitors2 = [sum(day_visitors[0:21]), sum(day_visitors[0:4]), sum(day_visitors[4:8]),
+                                 day_visitors[21], sum(day_visitors[0:8]) + day_visitors[19], sum(day_visitors[8:12]),
+                                 sum(day_visitors[12:17]), sum(day_visitors[17:21])]
+                last_day = day
+                new_row = [f'Día {day}', '', day_visitors2[0]] + [''] + day_visitors2[1:] + ['']
                 cantidades.loc[len(cantidades)] = new_row
 
-            receta = menu.at[ix, col]
-            new = recetario[ix][receta].copy()
-            new.iloc[:, 2:22] = new.iloc[:, 2:22] * day_visitors
-            cantidades = pd.concat([cantidades, new, pd.DataFrame([[]])]).reset_index(drop=True)
+            new.iloc[:, 2:24] = new.iloc[:, 2:24] * day_visitors
+            new2 = pd.concat(
+                [new.iloc[:, 0:2], new.iloc[:, 2:24].sum(axis=1), new.iloc[:, 25], new.iloc[:, 2:6].sum(axis=1),
+                 new.iloc[:, 6:10].sum(axis=1), new.iloc[:, 23], new.iloc[:, 2:10].join(new.iloc[:, 23]).sum(axis=1),
+                 new.iloc[:, 10:14].sum(axis=1), new.iloc[:, 14:19].sum(axis=1), new.iloc[:, 19:23].sum(axis=1),
+                 new.iloc[:, 24]], axis=1)
+            new2.columns = ['Recetas', 'Ingredientes', 'TOTAL', 'Medidas', 'Castores', 'Manada', 'Intendentes',
+                            'Total Intendencia', 'Tropa', 'Escultas', 'Rovers', 'Comun']
+            if comida in ['Desayuno', 'Almuerzo', 'Merienda', 'Pan_cena', 'Postre']:
+                cantidades = pd.concat([cantidades, new2, pd.DataFrame([[]])]).reset_index(drop=True)
+            else:
+                cantidades = pd.concat([cantidades, new2]).reset_index(drop=True)
 
     cantidades = cantidades.fillna('').reset_index(drop=True)
     return cantidades
@@ -134,45 +202,50 @@ def get_cantidades(menu, recetario, asistentes, marcha):
 
 def get_cantidades_marcha(menu, recetario, asistentes, fechas):
     asistentes.drop(['Intendentes'], axis=1, inplace=True)
-    cantidades = pd.DataFrame(
-        columns=['Recetas', 'Ingredientes', 'Castores', 'Castores_lact', 'Jefes_castores', 'JefesC_vegan', 'Manada',
-                 'Jefes_manada', 'JefesM_vegan', 'Tropa', 'Jefes_tropa', 'JefesT_vegan', 'Escultas', 'Escultas_gluten',
-                 'Jefes_escultas', 'JefesE_vegan', 'JefesE_vegan_lact', 'Rovers', 'Rovers_lact', 'Jefes_rover',
-                 'JefesR_vegan', 'Comun', 'Medidas'])
+    cols = ['Recetas', 'Ingredientes', 'TOTAL', 'Medidas', 'Castores', 'Manada', 'Tropa', 'Escultas', 'Rovers', 'Comun']
+    cantidades = pd.DataFrame(columns=cols)
     lista = {0: [0, 4],
-             1: [4, 7],
-             2: [7, 10],
-             3: [10, 15],
-             4: [15, 19]
+             1: [4, 8],
+             2: [8, 12],
+             3: [12, 17],
+             4: [17, 21]
              }
-    day = None
-    for col in menu:
-        for ix in menu.index:
-            if not menu.at[ix, col]:
+    last_day = None
+    for day in menu:
+        for comida in menu.index:
+            if not menu.at[comida, day]:
                 continue
             day_visitors = []
             for i in range(0, 5):
-                if fechas[i][int(col) - 1] == '0':
+                if fechas[i][int(day) - 1] == '0':
                     day_visitors.extend([0, 0, 0, 0])
                 else:
-                    select = asistentes.loc[fechas[i][int(col) - 1]].tolist()[lista[i][0]:lista[i][1]]
+                    select = asistentes.loc[fechas[i][int(day) - 1]].tolist()[lista[i][0]:lista[i][1]]
                     day_visitors.extend(list(map(int, select)))
-            if col != day:
-                day = col
-                new_row = [f'Día {col}', ''] + day_visitors + ['', '']
+            if day != last_day:
+                day_visitors2 = [sum(day_visitors[0:4]), sum(day_visitors[4:8]), sum(day_visitors[8:12]),
+                                 sum(day_visitors[12:17]), sum(day_visitors[17:21])]
+                last_day = day
+                new_row = [f'Día {day}', '', ''] + day_visitors2 + ['', '']
                 cantidades.loc[len(cantidades)] = new_row
 
-            receta = menu.at[ix, col]
-            new = recetario[ix][receta].copy().drop(['Intendentes'], axis=1)
-            new.iloc[:, 2:21] = new.iloc[:, 2:21] * day_visitors
-            cantidades = pd.concat([cantidades, new, pd.DataFrame([[]])]).reset_index(drop=True)
+            receta = menu.at[comida, day]
+            new = recetario[comida][receta].copy().drop(['Intendentes'], axis=1)
+            new.iloc[:, 2:23] = new.iloc[:, 2:23] * day_visitors
+            new2 = pd.concat(
+                [new.iloc[:, 0:2], new.iloc[:, 2:23].sum(axis=1), new.iloc[:, 24], new.iloc[:, 2:6].sum(axis=1),
+                 new.iloc[:, 6:10].sum(axis=1), new.iloc[:, 10:14].sum(axis=1), new.iloc[:, 14:19].sum(axis=1),
+                 new.iloc[:, 19:23].sum(axis=1), new.iloc[:, 23]], axis=1)
+            new2.columns = cols
+
+            cantidades = pd.concat([cantidades, new2, pd.DataFrame([[]])]).reset_index(drop=True)
 
     cantidades = cantidades.fillna('').reset_index(drop=True)
     return cantidades
 
 
 def get_asistentes():
-    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Asistentes_verano!B3:V19').execute()['values']
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Asistentes_verano!B3:X19').execute()['values']
     headers = x.pop(0)
     for item in x:
         item.extend([''] * (len(headers) - len(item)))
@@ -185,43 +258,30 @@ def get_shopping_list():
     x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Cantidades!B2:Y').execute()['values']
     headers = x.pop(0)
     data = pd.DataFrame(x, columns=headers).dropna(how='all')
-    cols = ['Castores', 'Castores_lact', 'Jefes_castores', 'JefesC_vegan', 'Manada', 'Jefes_manada', 'JefesM_vegan',
-            'Tropa',
-            'Jefes_tropa', 'JefesT_vegan', 'Escultas', 'Escultas_gluten', 'Jefes_escultas', 'JefesE_vegan',
-            'JefesE_vegan_lact', 'Rovers', 'Rovers_lact', 'Jefes_rover',
-            'JefesR_vegan', 'Intendentes', 'Comun']
 
-    data[cols] = data[cols].replace('', 0.0).astype(float)
+    data['TOTAL'] = data['TOTAL'].replace('', 0.0).astype(float)
     indice = data[data['Recetas'] == 'Día 24'].index[0]
     primera_semana = data.loc[:indice - 1]
     segunda_semana = data.loc[indice:]
 
     primera_semana = primera_semana.loc[primera_semana.Ingredientes != '']
-    primera_semana.drop('Recetas',axis=1,inplace=True)
-    primera_semana['Total'] = primera_semana.iloc[:, 1:22].sum(axis=1)
-    primera_semana = primera_semana.drop(cols, axis=1)
+    primera_semana = primera_semana.iloc[:, 1:4]
     primera_semana = primera_semana.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
 
     segunda_semana = segunda_semana.loc[segunda_semana.Ingredientes != '']
-    segunda_semana.drop('Recetas',axis=1,inplace=True)
-    segunda_semana['Total'] = segunda_semana.iloc[:, 1:22].sum(axis=1)
-    segunda_semana = segunda_semana.drop(cols, axis=1)
+    segunda_semana = segunda_semana.iloc[:, 1:4]
     segunda_semana = segunda_semana.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
 
     return primera_semana, segunda_semana
 
 
 def get_shopping_list_marcha():
-    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Cantidades_marcha!C2:X').execute()['values']
+    x = spreadsheets.values().get(spreadsheetId=ID_ACAMPADA, range='Cantidades_marcha!B2:X').execute()['values']
     headers = x.pop(0)
     data = pd.DataFrame(x, columns=headers).dropna(how='all')
-    cols = ['Castores', 'Castores_lact', 'Jefes_castores', 'JefesC_vegan', 'Manada', 'Jefes_manada', 'JefesM_vegan',
-            'Tropa', 'Jefes_tropa', 'JefesT_vegan', 'Escultas', 'Escultas_gluten', 'Jefes_escultas', 'JefesE_vegan',
-            'JefesE_vegan_lact', 'Rovers', 'Rovers_lact', 'Jefes_rover', 'JefesR_vegan', 'Comun']
-    data[cols] = data[cols].replace('', 0.0).astype(float)
+    data['TOTAL'] = data['TOTAL'].replace('', 0.0).astype(float)
     data = data.loc[data.Ingredientes != '']
-    data['Total'] = data.iloc[:, 1:21].sum(axis=1)
-    data = data.drop(cols, axis=1)
+    data = data.iloc[:, 1:4]
     data = data.groupby(['Ingredientes', 'Medidas'], as_index=False).sum()
     return data
 
@@ -230,7 +290,7 @@ def update_shopping_list():
     first_week, second_week = get_shopping_list()
     shopping_list_marcha = get_shopping_list_marcha()
     final_list = pd.concat([first_week, shopping_list_marcha]).groupby(['Ingredientes', 'Medidas'],
-                                                                          as_index=False).sum()
+                                                                       as_index=False).sum()
     data1 = [final_list.columns.values.tolist()]
     data1.extend(final_list.values.tolist())
     data2 = [second_week.columns.values.tolist()]
@@ -241,12 +301,13 @@ def update_shopping_list():
 
 
 def update_cantidades():
+    servicio = get_servicio()
     menu = get_menu_acampada()
     menu_marcha = get_menu_marcha()
     recetario = get_recetarios()
     asistentes = get_asistentes()
     marcha = get_fechas_marcha()
-    cantidades = get_cantidades(menu, recetario, asistentes, marcha)
+    cantidades = get_cantidades(menu, recetario, asistentes, marcha, servicio)
     cantidades_marcha = get_cantidades_marcha(menu_marcha, recetario, asistentes, marcha)
     data = [cantidades.columns.values.tolist()]
     data.extend(cantidades.values.tolist())
