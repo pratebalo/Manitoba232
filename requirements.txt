@@ -3,7 +3,6 @@ gTTS
 Pillow
 pandas
 numpy
-psycopg2
 python-dotenv
 python-telegram-bot-calendar
 newrelic
@@ -15,3 +14,5 @@ docx2pdf
 telegram
 unidecode
 python-decouple
+pytz
+psycopg2

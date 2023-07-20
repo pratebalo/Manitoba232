@@ -43,14 +43,15 @@ def update_contacts(context: CallbackContext):
         pageSize=2000,
         personFields='names,emailAddresses,phoneNumbers,biographies,memberships,metadata').execute()
 
-    data_gmail = pd.DataFrame()
+    series_list = []
     for contact in resultset['connections']:
         data = [contact['names'][0].get('givenName', ''), contact['names'][0].get('familyName', '')]
         data.extend([contact[col][0]['value'] if col in contact else '' for col in
                      ['biographies', 'emailAddresses', 'phoneNumbers']])
         data += [contact[col] for col in ['resourceName', 'etag', 'metadata']]
         data.append(tuple(sorted([a['contactGroupMembership']['contactGroupId'] for a in contact['memberships']])))
-        data_gmail = data_gmail.append(pd.Series(data), ignore_index=True)
+        series_list.append(pd.Series(data))
+    data_gmail = pd.concat(series_list, axis=1).T
     data_gmail.columns = ['givenName', 'familyName', 'biographies', 'emailAddresses', 'phoneNumbers', 'resourceName',
                           'etag', 'metadata', 'memberships']
     data_gmail = data_gmail.sort_values(['givenName', 'familyName']).reset_index(drop=True)
@@ -94,10 +95,14 @@ def update_contacts(context: CallbackContext):
         for j in row['memberships']:
             memberships.append({'contactGroupMembership': {'contactGroupResourceName': 'contactGroups/' + j}})
         body['memberships'] = memberships
-        logger.warning(f"Se crea el contacto -> {row}")
+        logger.warning(
+            f"Se crea el contacto -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
+            f"{row.biographies} {row.phoneNumbers} {row.memberships}")
         service.people().createContact(body=body).execute()
 
     for _, row in data_gmail2.iterrows():
-        logger.warning(f"Se elimina el contacto -> {row}")
+        logger.warning(
+            f"Se elimina el contacto -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
+            f"{row.biographies} {row.phoneNumbers} {row.memberships}")
 
         service.people().deleteContact(resourceName=row['resourceName']).execute()
