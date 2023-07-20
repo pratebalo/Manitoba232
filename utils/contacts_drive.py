@@ -96,7 +96,7 @@ def update_contacts(context: CallbackContext):
             memberships.append({'contactGroupMembership': {'contactGroupResourceName': 'contactGroups/' + j}})
         body['memberships'] = memberships
         logger.warning(
-            f"Se crea el contacto -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
+            f"Se crea el contacto    -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
             f"{row.biographies} {row.phoneNumbers} {row.memberships}")
         service.people().createContact(body=body).execute()
 
