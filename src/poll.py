@@ -1,7 +1,6 @@
 import logging
 from decouple import config
 
-
 from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
@@ -154,13 +153,17 @@ def democracia(update: Update, context: CallbackContext) -> None:
 def bot_activado(update: Update, context: CallbackContext) -> None:
     logger.warning(f"{update.effective_user.first_name} ha ejecutado el comando bot_activado")
     data = db.select("data")
+    db.update_bot_activated_all()
     for _, persona in data.iterrows():
         try:
-            mensaje = context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text="prueba")
+            mensaje = context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text="Test de bot activado")
             context.bot.deleteMessage(mensaje.chat_id, mensaje.message_id)
             # print(f"{persona.apodo} con id {persona.id} tiene activado el bot")
         except:
-            print(f"{persona.apodo} con id {persona.id} NO tiene activado el bot")
+            db.update_bot_not_activated(persona.id)
+            context.bot.sendMessage(chat_id=update.effective_chat.id, parse_mode="HTML",
+                                    text=f"{persona.apodo} con id {persona.id} NO tiene activado el bot")
+            logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot")
 
 
 def terminar(update: Update, context: CallbackContext):

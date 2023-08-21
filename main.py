@@ -31,7 +31,6 @@ LOQUENDO_1, LOQUENDO_2 = range(2)
 ESTADO_UNO, ESTADO_DOS = range(2)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-ID_CONVERSACIONES = int(config("ID_CONVERSACIONES"))
 
 ID_TELEGRAM = 777000
 
@@ -55,39 +54,12 @@ def muditos(context: CallbackContext):
 def echo(update: Update, context: CallbackContext):
     data = db.select("data")
     user_id = int(update.effective_user.id)
-    chat_id = int(update.effective_chat.id)
-    if chat_id == ID_CONVERSACIONES:
-        conversaciones = db.select("conversaciones")
-        if user_id == ID_TELEGRAM:
-            if update.message.text:
-                texto = update.message.text
-            elif update.message.poll:
-                texto = update.message.poll.question
-            else:
-                texto = "Nueva conversación"
-            mensaje = context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                              text=f"Se ha iniciado una conversacion: <a f='https://t.me/c/1462256012/{update.message.message_id}?thread={update.message.message_id}'>{texto}</a>")
-            db.insert_conversacion(update.message.message_id, mensaje.message_id, texto)
-        else:
-            reply_id = update.message.reply_to_message.message_id
-            conversacion = conversaciones[conversaciones.id == reply_id].iloc[0]
-            conversacion.total_mensajes += 1
-            db.update_conversacion(conversacion)
-            try:
-                context.bot.deleteMessage(chat_id=ID_MANITOBA, message_id=int(conversacion.mensaje_id))
-            except:
-                logger.error(f"Fallo al eliminar el mensaje  {conversacion.mensaje_id}")
-
-            mensaje = context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                              text=f"La conversacion <a href='https://t.me/c/1462256012/{conversacion.id}?thread={conversacion.id}'>{conversacion.nombre}</a> tiene un total de {conversacion.total_mensajes} mensajes")
-
-            conversacion.mensaje_id = mensaje.message_id
-            db.update_conversacion(conversacion)
     nombre = update.effective_user.first_name
     fila = data.loc[data.id == user_id]
     if len(fila) == 1:
         fila = fila.iloc[0]
         fila.total_mensajes += 1
+        fila.ronda_mensajes += 1
         fila.ultimo_mensaje = datetime.today().strftime('%d/%m/%Y %H:%M:S')
         if update.message:
             if update.message.text:

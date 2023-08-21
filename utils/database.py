@@ -1,11 +1,15 @@
 import psycopg2
 import pandas as pd
 
+from decouple import config
+
+HOST = config("HOST")
+
 
 def select(table):
     query = f"SELECT * FROM {table}"
 
-    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
+    connection = psycopg2.connect(host=HOST, database='manitobabot', user='postgres', password='postgres')
     result = pd.read_sql(query, connection).sort_values(by="id", ignore_index=True)
     connection.close()
     return result
@@ -15,7 +19,7 @@ def delete(table, id):
     query = f"""DELETE FROM {table}
             WHERE id = {id}
             RETURNING *;"""
-    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
+    connection = psycopg2.connect(host=HOST, database='manitobabot', user='postgres', password='postgres')
     result = pd.read_sql(query, connection)
     connection.commit()
     connection.close()
@@ -33,7 +37,8 @@ def insert_data(id, nombre):
 def update_data1(data):
     query = f"""set DateStyle='ISO, DMY';
         UPDATE data
-        SET ultimo_mensaje='{data.ultimo_mensaje}', total_mensajes={data.total_mensajes}, sticker={data.sticker}, gif={data.gif}
+        SET ultimo_mensaje='{data.ultimo_mensaje}', total_mensajes={data.total_mensajes},
+        ronda_mensajes={data.ronda_mensajes}, sticker={data.sticker}, gif={data.gif}
         WHERE id={data.id};"""
     connect(query)
 
@@ -46,21 +51,18 @@ def update_data2(id, nombre, apellidos, apodo, genero, cumple, cumple_ano):
     connect(query)
 
 
-def insert_conversacion(id, mensaje_id, nombre):
-    query = f"""INSERT INTO conversaciones
-                (id, mensaje_id,nombre, total_mensajes)
-                VALUES ({id},{mensaje_id},'{nombre}',{0});"""
-
+def update_bot_activated_all():
+    query = f"""set DateStyle='ISO, DMY';
+        UPDATE data
+        SET activado=True;"""
     connect(query)
 
 
-def update_conversacion(conversacion):
-    query = f"""
-        UPDATE  conversaciones
-        SET
-            total_mensajes ={conversacion.total_mensajes},
-            mensaje_id = {conversacion.mensaje_id}
-        WHERE id={conversacion.id};"""
+def update_bot_not_activated(id):
+    query = f"""set DateStyle='ISO, DMY';
+        UPDATE data
+        SET activado=False
+        WHERE id={id};"""
     connect(query)
 
 
@@ -157,7 +159,7 @@ def end_poll(id):
 
 
 def connect(query):
-    connection = psycopg2.connect(host='127.0.0.1', database='manitobabot', user='postgres', password='postgres')
+    connection = psycopg2.connect(host=HOST, database='manitobabot', user='postgres', password='postgres')
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
