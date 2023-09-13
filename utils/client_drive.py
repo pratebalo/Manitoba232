@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import logging
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -6,10 +8,10 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 from mimetypes import MimeTypes
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload, MediaIoBaseUpload
 from googleapiclient.errors import HttpError
 from io import BytesIO
-from datetime import datetime
+from decouple import config
 import pandas as pd
 
 DICT = {
@@ -17,7 +19,10 @@ DICT = {
     'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.google-apps.form': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'application/vnd.google-apps.jam': ''}
-FOLDER_BASE = '0AHBcqK_64EhOUk9PVA'
+
+FOLDER_BASE = config("FOLDER_BASE")
+FOLDER_EXPENSES = config("FOLDER_EXPENSES")
+FOLDER_PAID = config("FOLDER_PAID")
 
 SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts',
           'https://www.googleapis.com/auth/spreadsheets']
@@ -41,11 +46,11 @@ if not creds or not creds.valid:
 drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
 
 
-def get_file_by_id(file_id, mimeType):
-    if mimeType == "application/vnd.google-apps.spreadsheet":
+def get_sheets_by_id(file_id, mime_type):
+    if mime_type == "application/vnd.google-apps.spreadsheet":
         request = drive_service.files().export_media(fileId=file_id,
                                                      mimeType='application/x-vnd.oasis.opendocument.spreadsheet')
-    elif mimeType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+    elif mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
         request = drive_service.files().get_media(fileId=file_id)
     else:
         return None
@@ -61,6 +66,21 @@ def get_file_by_id(file_id, mimeType):
     return file
 
 
+def get_file_by_id(file_id):
+    file_metadata = drive_service.files().get(fileId=file_id, fields='name').execute()
+    file_name = file_metadata.get('name', 'Nombre de archivo no encontrado')
+
+    request = drive_service.files().get_media(fileId=file_id)
+    fh = BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+
+    return file_name, fh.getvalue()
+
+
 def get_file(file):
     try:
         request = drive_service.files().get_media(fileId=file.id)
@@ -72,8 +92,7 @@ def get_file(file):
             print("Download %d%%." % int(status.progress() * 100))
 
     except:
-        request = drive_service.files().export_media(fileId=file.id,
-                                                     mimeType=file.mimeType)
+        request = drive_service.files().export_media(fileId=file.id, mimeType=file.mimeType)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fd=fh, request=request)
         done = False
@@ -140,23 +159,59 @@ def get_file_description(file_id):
     return file.squeeze()
 
 
-def upload_file(path, parent_id=None):
+def upload_file_from_path(path, parent_id=None):
     mime = MimeTypes()
 
-    file_metadata = {
-        'name': os.path.basename(path),
-        # 'mimeType' : 'application/vnd.google-apps.spreadsheet'
-    }
+    file_metadata = {'name': os.path.basename(path)}
     if parent_id:
         file_metadata['parents'] = [parent_id]
 
-    media = MediaFileUpload(path, mimetype=mime.guess_type(os.path.basename(path))[0],
-                            resumable=True)
+    media = MediaFileUpload(path, mimetype=mime.guess_type(os.path.basename(path))[0], resumable=True)
     try:
         file = drive_service.files().create(body=file_metadata,
                                             media_body=media,
                                             fields='id').execute()
-        print(file.get('id'))
+        return file.get('id')
     except HttpError:
         print('corrupted file')
         pass
+
+
+def upload_file(data, file_name, parent_id=None):
+    image_stream = BytesIO(data)
+    media = MediaIoBaseUpload(image_stream, mimetype='image/jpeg', resumable=True)
+
+    file_metadata = {'name': file_name}
+    if parent_id:
+        file_metadata['parents'] = [parent_id]
+    try:
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+
+        return file.get('id')
+    except HttpError:
+        print('Error al subir el archivo')
+
+
+def delete_file(file_id):
+    try:
+        drive_service.files().delete(fileId=file_id).execute()
+    except Exception as e:
+        logging.error(f"Error al eliminar el archivo: {str(e)}")
+
+
+def move_file_to_folder(file_id, folder_id):
+    try:
+        file = drive_service.files().get(fileId=file_id, fields='parents').execute()
+
+        drive_service.files().update(
+            fileId=file_id,
+            addParents=folder_id,
+            removeParents=file['parents'][0],
+            fields='id,parents'
+        ).execute()
+    except Exception as e:
+        logging.error(f"Error al mover el archivo: {str(e)}")

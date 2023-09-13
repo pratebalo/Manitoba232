@@ -1,5 +1,6 @@
 import psycopg2
 import pandas as pd
+import json
 
 from decouple import config
 
@@ -15,9 +16,9 @@ def select(table):
     return result
 
 
-def delete(table, id):
+def delete(table, idx):
     query = f"""DELETE FROM {table}
-            WHERE id = {id}
+            WHERE id = {idx}
             RETURNING *;"""
     connection = psycopg2.connect(host=HOST, database='manitobabot', user='postgres', password='postgres')
     result = pd.read_sql(query, connection)
@@ -26,15 +27,15 @@ def delete(table, id):
     return result
 
 
-def insert_data(id, nombre):
+def insert_data(idx, name):
     query = f"""INSERT INTO data
                 (id,nombre)
-                VALUES ({id},'{nombre}');"""
+                VALUES ({idx},'{name}');"""
 
     connect(query)
 
 
-def update_data1(data):
+def update_data_messages(data):
     query = f"""set DateStyle='ISO, DMY';
         UPDATE data
         SET ultimo_mensaje='{data.ultimo_mensaje}', total_mensajes={data.total_mensajes},
@@ -43,11 +44,35 @@ def update_data1(data):
     connect(query)
 
 
-def update_data2(id, nombre, apellidos, apodo, genero, cumple, cumple_ano):
+def update_data_start(idx, name, surname, nick, gender, birth, birth_year):
     query = f"""set DateStyle='ISO, DMY';
         UPDATE data
-        SET nombre='{nombre}', apellidos='{apellidos}', apodo='{apodo}', genero='{genero}', cumple='{cumple}', cumple_ano={cumple_ano}
-        WHERE id={id};"""
+        SET nombre='{name}', apellidos='{surname}', apodo='{nick}', genero='{gender}', cumple='{birth}', cumple_ano={birth_year}
+        WHERE id={idx};"""
+    connect(query)
+
+
+def format_value(val):
+    if isinstance(val, str):
+        return "'{}'".format(val)
+    elif isinstance(val, (int, float)):
+        return str(val)
+    elif isinstance(val, bool):
+        return 'TRUE' if val else 'FALSE'
+    elif val is None:
+        return 'NULL'
+    elif isinstance(val, list):
+        return "ARRAY{}".format(val)
+    else:
+        raise ValueError("Tipo de dato no soportado: {}".format(type(val)))
+
+
+def update_field_table(idx, fields, values, table):
+    query = f"""set DateStyle='ISO, DMY';
+        UPDATE {table}
+        SET {", ".join([f"{field} = {format_value(value)}" for field, value in zip(fields, values)])}
+        WHERE id = {idx};
+        """
     connect(query)
 
 
@@ -58,11 +83,11 @@ def update_bot_activated_all():
     connect(query)
 
 
-def update_bot_not_activated(id):
+def update_bot_not_activated(idx):
     query = f"""set DateStyle='ISO, DMY';
         UPDATE data
         SET activado=False
-        WHERE id={id};"""
+        WHERE id={idx};"""
     connect(query)
 
 
@@ -83,7 +108,7 @@ def update_tarea(tarea):
     connect(query)
 
 
-def insert_lista(lista):
+def insert_list(lista):
     query = f"""set DateStyle='ISO, DMY';
         INSERT INTO listas
         (nombre, elementos, tipo_elementos, fecha, creador, id_mensaje)
@@ -91,11 +116,11 @@ def insert_lista(lista):
     connect(query)
 
 
-def update_lista(lista):
+def update_list(lista):
     query = f"""set DateStyle='ISO, DMY';
         UPDATE listas
         SET (nombre, elementos, tipo_elementos, fecha, creador, id_mensaje) =
-        ( '{lista.nombre}', ARRAY{lista.elementos}, ARRAY{list(map(int, lista.tipo_elementos))}, '{lista.fecha}',{lista.creador}, {lista.id_mensaje})
+        ( '{lista.nombre}', ARRAY{lista.elementos}, ARRAY{lista(map(int, lista.tipo_elementos))}, '{lista.fecha}',{lista.creador}, {lista.id_mensaje})
         WHERE id = {lista.id};"""
     connect(query)
 
@@ -109,52 +134,61 @@ def insert_bote(persona, cantidad, total, motivo):
     connect(query)
 
 
-def insert_gastos(id, motivo, cantidad, fecha, nombre):
+def insert_expense(id_expense, concept, price, date, photo):
     query = f"""set DateStyle='ISO, DMY';
-    INSERT INTO gastos    
-    (id_persona, motivo, cantidad, fecha, nombre_persona)
-         VALUES ({id}, '{motivo}', {cantidad}, '{fecha}', '{nombre}');"""
+    INSERT INTO expenses    
+    (id_person, concept, paid, price, date, photo)
+         VALUES ({id_expense}, '{concept}',FALSE, {price}, '{date}', {photo})
+    RETURNING id;"""
 
-    connect(query)
+    return connect(query)
 
 
-def update_gasto(id_gasto):
+def update_expense_paid(id_expense):
     query = f"""
-        UPDATE gastos
-        SET pagado = True
-        WHERE id = {id_gasto};"""
+        UPDATE expenses
+        SET paid = True
+        WHERE id = {id_expense};"""
     connect(query)
 
 
-def update_cumple(id_persona, cancion, idioma, sticker):
+def update_expense_file(id_expense, id_file):
+    query = f"""
+        UPDATE expenses
+        SET id_file = '{id_file}'
+        WHERE id = {id_expense};"""
+    connect(query)
+
+
+def update_birth(id_person, song, language, sticker):
     query = f"""
         UPDATE data
-        SET cumple_song = '{cancion}', cumple_lang='{idioma}', cumple_sticker='{sticker}'
-        WHERE id = {id_persona};"""
+        SET cumple_song = '{song}', cumple_lang='{language}', cumple_sticker='{sticker}'
+        WHERE id = {id_person};"""
     connect(query)
 
 
-def insert_poll(id, question, options, votes, url, chat_id, message_id):
+def insert_poll(id_poll, question, options, votes, url, chat_id, message_id):
     query = f"""set DateStyle='ISO, DMY';
     INSERT INTO encuestas    
     (id, question, options, votes, url,chat_id,message_id)
-         VALUES ({id}, '{question}', ARRAY{options},ARRAY{votes}::integer[], '{url}',{chat_id},{message_id});"""
+         VALUES ({id_poll}, '{question}', ARRAY{options},ARRAY{votes}::integer[], '{url}',{chat_id},{message_id});"""
     connect(query)
 
 
-def update_poll(id, votes, message_id):
+def update_poll(idx, votes, message_id, last_vote):
     query = f"""
         UPDATE encuestas
-        SET votes = ARRAY{votes}::bigint[], message_id={message_id}
-        WHERE id = {id};"""
+        SET votes = ARRAY{votes}::bigint[], message_id={message_id}, last_vote='{json.dumps(last_vote)}'
+        WHERE id = {idx};"""
     connect(query)
 
 
-def end_poll(id):
+def end_poll(idx):
     query = f"""
         UPDATE encuestas
         SET "end" = true
-        WHERE id = {id};"""
+        WHERE id = {idx};"""
     connect(query)
 
 
@@ -162,6 +196,11 @@ def connect(query):
     connection = psycopg2.connect(host=HOST, database='manitobabot', user='postgres', password='postgres')
     cursor = connection.cursor()
     cursor.execute(query)
+    if cursor.description:
+        row = cursor.fetchone()[0]
+    else:
+        row = None
     connection.commit()
     cursor.close()
     connection.close()
+    return row

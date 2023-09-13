@@ -1,20 +1,14 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CommandHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
-    CallbackContext,
-    MessageHandler,
-    Filters
-)
-import pandas as pd
-import logging
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
 from utils import database as db
-import random
 from decouple import config
-
 from datetime import date
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY
+
+import pandas as pd
+import logging
+import random
+import src.utilitys as ut
 
 # Stages
 ELEGIR_TAREA, CREAR_TAREA1, CREAR_TAREA2, CREAR_TAREA3, CREAR_TAREA4, CREAR_TAREA5, FINAL_OPTION = range(7)
@@ -43,16 +37,25 @@ class MyTranslationCalendar(DetailedTelegramCalendar):
     next_button = "⏩"
 
 
-def recoradar_tareas(context: CallbackContext):
+def recordar_tareas(context: CallbackContext):
     all_tareas = db.select("tareas")
     data = db.select("data")
-    for _, tarea in all_tareas.iterrows():
-        for persona in tarea.personas:
-            context.bot.sendMessage(chat_id=persona, parse_mode="HTML",
-                                    text=f"Tienes esta tarea pendiente:\n{tarea_to_text(tarea, data)}")
+    for _, tarea in all_tareas[~all_tareas.completada].iterrows():
+        days = (tarea.fecha - date.today()).days
+        text = ""
+        if days % 7 == 0:
+            text = f"Recuerda que tienes esta tarea pendiente\n{tarea_to_text(tarea, data)}"
+        elif days == 3:
+            text = f"Te quedan 3 diassssss\n{tarea_to_text(tarea, data)}"
+        elif days == 1:
+            text = f"Que era para mañanaaaaaaaa\n{tarea_to_text(tarea, data)}"
+        if text:
+            for persona in tarea.personas:
+                context.bot.sendMessage(chat_id=persona, parse_mode="HTML", text=text)
 
 
 def tareas(update: Update, context: CallbackContext):
+    recordar_tareas(context)
     if update.message:
         context.user_data["ediciones"] = []
         context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
@@ -135,8 +138,7 @@ def elegir_fecha2(update: Update, context: CallbackContext):
                                       message_id=update.callback_query.message.message_id,
                                       reply_markup=key)
     elif result:
-        context.bot.deleteMessage(update.effective_chat.id,
-                                  update.callback_query.message.message_id)
+        context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
         result = result.strftime("%d/%m/%Y")
         context.user_data["fecha"] = result
 
@@ -181,6 +183,7 @@ def asignar_persona2(update: Update, context: CallbackContext):
 
 
 def end_creacion(update: Update, context: CallbackContext):
+    context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
     data = context.user_data["data"]
     tarea = pd.Series(
         {"descripcion": context.user_data["descripcion"], "personas": context.user_data["personas_asignadas"],

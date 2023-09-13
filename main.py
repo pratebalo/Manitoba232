@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
 from utils import contacts_drive as contacts, menu
-from src import poll, tareas, birthday, listas, tesoreria, new_member, drive
+from src import poll, tareas, birthday, lists, tesoreria, new_member, drive
 
 warnings.filterwarnings("ignore")
 
@@ -65,7 +65,7 @@ def echo(update: Update, context: CallbackContext):
             if update.message.text:
                 # logger.info(f"{update.effective_chat.type} -> {fila.apodo} ha enviado {update.message.text}. Con un total de {fila.total_mensajes} mensajes")
                 if "la lista:\n" in update.message.text:
-                    listas.editar_lista_manual(update, context)
+                    listas.edit_list_manual(update, context)
 
             elif update.message.sticker:
                 fila.sticker += 1
@@ -111,7 +111,7 @@ def echo(update: Update, context: CallbackContext):
                     f"{update.effective_chat.type} -> {fila.apodo} ha anclado un mensaje")
             else:
                 logger.info(f"{update.effective_chat.type} -> update.message desconocido:  {update.message}")
-            db.update_data1(fila)
+            db.update_data_messages(fila)
         elif update.edited_message:
             logger.warning(
                 f"{update.effective_chat.type} -> {fila.apodo} ha editado el mensaje por {update.edited_message.text}. Con un total de {fila.total_mensajes} mensajes")
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     )
 
-    dp.add_handler(listas.get_conv_handler_listas())
+    dp.add_handler(lists.get_conv_handler_listas())
     dp.add_handler(tesoreria.get_conv_handler_tesoreria())
     dp.add_handler(conv_handler_loquendo)
     dp.add_handler(conv_handler_pietrobot)
@@ -325,13 +325,12 @@ if __name__ == "__main__":
     dp.add_handler(menu.get_conv_handler_menu())
     dp.add_handler(CommandHandler('cumples', birthday.get_birthday))
     dp.add_handler(CommandHandler('allcumples', birthday.get_all_birthday))
-    dp.add_handler(CommandHandler('felicitar', birthday.birthday2))
     dp.add_handler(CommandHandler('listados', listados))
 
     dp.add_handler(PollAnswerHandler(poll.receive_poll_answer))
     dp.add_handler(MessageHandler(Filters.poll, poll.receive_poll))
-    dp.add_handler(CommandHandler('bot', poll.bot_activado))
-    dp.add_handler(poll.get_conv_handler_encuestas())
+    dp.add_handler(CommandHandler('bot', poll.bot_activated))
+    dp.add_handler(poll.get_conv_handler_polls())
     dp.add_handler(drive.conv_handler_drive)
     dp.add_handler(new_member.get_conv_handler_start())
     dp.add_handler(MessageHandler(Filters.all, echo))
@@ -339,6 +338,6 @@ if __name__ == "__main__":
     job.run_daily(birthday.birthday, time(7, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muditos, time(17, 54, 00, 000000))
-    job.run_daily(tareas.recoradar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')), days=(1,))
+    job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     logger.info(f"Iniciando el bot")
     run(updater)

@@ -126,9 +126,9 @@ def elegir_fecha2(update: Update, context: CallbackContext):
 
 def terminar(update: Update, context: CallbackContext):
     context.bot.deleteMessage(context.user_data["oldMessage2"].chat_id, context.user_data["oldMessage2"].message_id)
-    db.update_data2(update.effective_user.id, context.user_data["nombre"], context.user_data["apellidos"],
-                    context.user_data["mote"], context.user_data["genero"], context.user_data["fecha"],
-                    context.user_data["año"])
+    db.update_data_start(update.effective_user.id, context.user_data["nombre"], context.user_data["apellidos"],
+                         context.user_data["mote"], context.user_data["genero"], context.user_data["fecha"],
+                         context.user_data["año"])
 
     context.bot.sendMessage(update.effective_chat.id, "Muchas gracias. Ya he actualizado tus datos")
     context.bot.sendMessage(update.effective_chat.id,

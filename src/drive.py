@@ -1,20 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CommandHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
-    CallbackContext,
-    MessageHandler,
-    Filters
-)
-import pandas as pd
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 import logging
-from utils import database as db
-import random
 from decouple import config
 from utils import client_drive
-from datetime import date
-from telegram_bot_calendar import DetailedTelegramCalendar, DAY
 
 # Stages
 DRIVE1, DRIVE2, DRIVE3 = range(3)
@@ -22,35 +10,37 @@ DRIVE1, DRIVE2, DRIVE3 = range(3)
 ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logging.getLogger("drive")
 
+FOLDER_BASE = config("FOLDER_BASE")
+
 
 def drive(update: Update, context: CallbackContext):
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} entró en el comando drive")
 
     chat_id = update.effective_chat.id
-    files = client_drive.get_all_files_description("0AHBcqK_64EhOUk9PVA")
+    files = client_drive.get_all_files_description(FOLDER_BASE)
     files.mimeType = files.mimeType.str.replace('application/', "").str.replace('vnd.google-apps.', "").str.replace('vnd.openxmlformats-officedocument.', "")
     keyboard = []
     for i, file in files.iterrows():
-        keyboardline = []
+        keyboard_line = []
 
         if file.mimeType == "folder":
-            keyboardline.append(InlineKeyboardButton("📁" + file["name"], callback_data="ABRIR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📁" + file["name"], callback_data="ABRIR" + file.id))
         elif file.mimeType == "pdf":
-            keyboardline.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "vnd.ms-excel" or file.mimeType == "spreadsheetml.sheet" or file.mimeType == "spreadsheet":
-            keyboardline.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "image/jpeg" or file.mimeType == "image/jpeg":
-            keyboardline.append(InlineKeyboardButton("🖼" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🖼" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "text/plain":
-            keyboardline.append(InlineKeyboardButton("🗒" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🗒" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "video/3gpp" or file.mimeType == "video/mp4" or file.mimeType == "video/quicktime":
-            keyboardline.append(InlineKeyboardButton("📹" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📹" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "msword" or file.mimeType == "document" or file.mimeType == "wordprocessingml.document":
-            keyboardline.append(InlineKeyboardButton("📘" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📘" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "zip" or file.mimeType == "rar":
-            keyboardline.append(InlineKeyboardButton("🗃" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🗃" + file["name"], callback_data="DESCARGAR" + file.id))
 
-        keyboard.append(keyboardline)
+        keyboard.append(keyboard_line)
     keyboard.append([InlineKeyboardButton("Subir archivo", callback_data=str("CREAR"))])
     keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("TERMINAR"))])
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -69,26 +59,26 @@ def drive2(update: Update, context: CallbackContext):
     files.mimeType = files.mimeType.str.replace('application/', "").str.replace('vnd.google-apps.', "").str.replace('vnd.openxmlformats-officedocument.', "")
     keyboard = []
     for i, file in files.iterrows():
-        keyboardline = []
+        keyboard_line = []
 
         if file.mimeType == "folder":
-            keyboardline.append(InlineKeyboardButton("📁" + file["name"], callback_data="ABRIR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📁" + file["name"], callback_data="ABRIR" + file.id))
         elif file.mimeType == "pdf":
-            keyboardline.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📕" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "vnd.ms-excel" or file.mimeType == "spreadsheetml.sheet" or file.mimeType == "spreadsheet":
-            keyboardline.append(InlineKeyboardButton("📗" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📗" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "image/jpeg" or file.mimeType == "image/jpeg":
-            keyboardline.append(InlineKeyboardButton("🖼" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🖼" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "text/plain":
-            keyboardline.append(InlineKeyboardButton("🗒" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🗒" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "video/3gpp" or file.mimeType == "video/mp4" or file.mimeType == "video/quicktime":
-            keyboardline.append(InlineKeyboardButton("📹" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📹" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "msword" or file.mimeType == "document" or file.mimeType == "wordprocessingml.document":
-            keyboardline.append(InlineKeyboardButton("📘" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("📘" + file["name"], callback_data="DESCARGAR" + file.id))
         elif file.mimeType == "zip" or file.mimeType == "rar":
-            keyboardline.append(InlineKeyboardButton("🗃" + file["name"], callback_data="DESCARGAR" + file.id))
+            keyboard_line.append(InlineKeyboardButton("🗃" + file["name"], callback_data="DESCARGAR" + file.id))
 
-        keyboard.append(keyboardline)
+        keyboard.append(keyboard_line)
     keyboard.append([InlineKeyboardButton("Subir archivo", callback_data=str("CREAR"))])
     parent_folder = client_drive.get_parent_id(file_id)
     if parent_folder:
@@ -101,7 +91,7 @@ def drive2(update: Update, context: CallbackContext):
     return DRIVE2
 
 
-def drive_descargar(update: Update, context: CallbackContext):
+def drive_download(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     file_id = update.callback_query.data.replace("DESCARGAR", "")
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} descargo el archivo {file_id}")
@@ -109,22 +99,24 @@ def drive_descargar(update: Update, context: CallbackContext):
     doc = client_drive.get_file(file)
     context.bot.sendDocument(chat_id=chat_id, document=doc, timeout=2000)
 
-def terminar_drive(update: Update, context: CallbackContext):
+
+def end_drive(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
 
     return ConversationHandler.END
+
 
 conv_handler_drive = ConversationHandler(
     entry_points=[CommandHandler('drive', drive)],
     states={
         DRIVE1: [
             CallbackQueryHandler(drive2, pattern='^ABRIR'),
-            CallbackQueryHandler(drive_descargar, pattern='^DESCARGAR'),
-            CallbackQueryHandler(terminar_drive, pattern='^TERMINAR')
+            CallbackQueryHandler(drive_download, pattern='^DESCARGAR'),
+            CallbackQueryHandler(end_drive, pattern='^TERMINAR')
         ],
         DRIVE2: [
             CallbackQueryHandler(drive2, pattern='^ABRIR'),
-            CallbackQueryHandler(drive_descargar, pattern='^DESCARGAR')
+            CallbackQueryHandler(drive_download, pattern='^DESCARGAR')
         ],
         DRIVE3: [
             CallbackQueryHandler(drive2, pattern='^DESCARGAR')

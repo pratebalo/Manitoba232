@@ -27,50 +27,22 @@ STICKERS = ["CAACAgIAAxkBAAEDfgNhugP6zcKUVHjHDThT6UFcw7Ex7AACPQEAAiI3jgRzp-LtkvR
 
 def birthday(context: CallbackContext):
     data = db.select("data")
-    fecha = datetime.today().strftime('%d/%m')
-    cumpleaneros = data[data.cumple == fecha]
+    date = datetime.today().strftime('%d/%m')
+    data_birth = data[data.cumple == date]
 
-    for _, cumpleanero in cumpleaneros.iterrows():
+    for _, person in data_birth.iterrows():
         # tts = gTTS(cumpleanero.cumple_song, lang=cumpleanero.cumple_lang)
         # tts.save(f"Felicitacion de su majestad para {cumpleanero.apodo}.mp3")
 
-        context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                text=f"Felicidades <b>{cumpleanero.apodo}</b>!!!!!")
-        context.bot.sendSticker(chat_id=ID_MANITOBA,
-                                sticker=STICKERS[random.randint(0, len(STICKERS) - 1)])
-        # context.bot.sendAudio(chat_id=ID_MANITOBA,
-        #                       audio=open(f"Felicitacion de su majestad para {cumpleanero.apodo}.mp3", "rb"))
-        if cumpleanero.genero == "F":
-            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                    text=f"Por seeeeerrrr tan bueeeennaa muchaaaaachaaaaa 🎉🎊🎈")
+        context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=f"Felicidades <b>{person.apodo}</b>!!!!!")
+        context.bot.sendSticker(chat_id=ID_MANITOBA, sticker=STICKERS[random.randint(0, len(STICKERS) - 1)])
+        # context.bot.sendAudio(chat_id=ID_MANITOBA, audio=open(f"Felicitacion de su majestad para {cumpleanero.apodo}.mp3", "rb"))
+        if person.genero == "F":
+            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=f"Por seeeeerrrr tan bueeeennaa muchaaaaachaaaaa 🎉🎊🎈")
+        elif person.genero == "M":
+            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=f"Por seeeeerrrr tan bueeeenn muchaaaaachaooooo 🎉🎊🎈")
         else:
-            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                    text=f"Por seeeeerrrr tan bueeeenn muchaaaaachaooooo 🎉🎊🎈")
-
-
-def birthday2(update: Update, context: CallbackContext):
-    data = db.select("data")
-    fecha = datetime.today().strftime('%d/%m')
-    cumpleaneros = data[data.cumple == fecha]
-    for _, cumpleanero in cumpleaneros.iterrows():
-        # tts = gTTS(cumpleanero.cumple_song, lang=cumpleanero.cumple_lang)
-        # tts.save(f"Felicitacion de su majestad para {cumpleanero.apodo}.mp3")
-
-        context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                text=f"Felicidades <b>{cumpleanero.apodo}</b>!!!!!")
-        context.bot.sendSticker(chat_id=ID_MANITOBA,
-                                sticker=STICKERS[random.randint(0, len(STICKERS) - 1)])
-        # context.bot.sendAudio(chat_id=ID_MANITOBA,
-        #                       audio=open(f"Felicitacion de su majestad para {cumpleanero.apodo}.mp3", "rb"))
-        if cumpleanero.genero == "F":
-            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                    text=f"Por seeeeerrrr tan bueeeennaa muchaaaaachaaaaa 🎉🎊🎈")
-        elif cumpleanero.genero == "M":
-            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                    text=f"Por seeeeerrrr tan bueeeenn muchaaaaachooooo 🎉🎊🎈")
-        else:
-            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML",
-                                    text=f"Por seeeeerrrr tan bueeeenn muchaaaaacheeee 🎉🎊🎈")
+            context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=f"Por seeeeerrrr tan bueeeenn muchaaaaacheeee 🎉🎊🎈")
 
 
 def get_birthday(update: Update, context: CallbackContext):
@@ -82,8 +54,8 @@ def get_birthday(update: Update, context: CallbackContext):
 
     a = data[data.cumple > datetime.today()].sort_values("cumple")[0:4]
     texto = ""
-    for _, persona in a.iterrows():
-        texto += f"{persona.nombre} {persona.apellidos}  | {persona.cumple.strftime('%d/%m')}/{str(persona.cumple_ano)}\n"
+    for _, person in a.iterrows():
+        texto += f"{person.nombre} {person.apellidos}  | {person.cumple.strftime('%d/%m')}/{str(person.cumple_ano)}\n"
 
     context.bot.sendMessage(chat_id, texto)
 
@@ -96,14 +68,14 @@ def get_all_birthday(update: Update, context: CallbackContext):
     data.cumple = pd.to_datetime(data.cumple, format='%d/%m').apply(lambda dt: dt.replace(year=year))
 
     a = data.sort_values("cumple")
-    texto = ""
+    text = ""
     for _, persona in a.iterrows():
         if pd.isna(persona.cumple):
-            texto += f"{persona.nombre} {persona.apellidos}  | N/A\n"
+            text += f"{persona.nombre} {persona.apellidos}  | N/A\n"
         else:
-            texto += f"{persona.nombre} {persona.apellidos}  | {persona.cumple.strftime('%d/%m')}/{str(int(persona.cumple_ano))}\n"
+            text += f"{persona.nombre} {persona.apellidos}  | {persona.cumple.strftime('%d/%m')}/{str(int(persona.cumple_ano))}\n"
 
-    context.bot.sendMessage(chat_id, texto)
+    context.bot.sendMessage(chat_id, text)
 
 
 def set_birthday(update: Update, context: CallbackContext):
@@ -112,8 +84,8 @@ def set_birthday(update: Update, context: CallbackContext):
     context.bot.deleteMessage(chat_id, update.message.message_id)
     keyboard = []
     part_keyboard = []
-    for i, persona in data.sort_values(by="apodo", ignore_index=True).iterrows():
-        part_keyboard.append(InlineKeyboardButton(persona.apodo, callback_data=str(persona.id)))
+    for i, person in data.sort_values(by="apodo", ignore_index=True).iterrows():
+        part_keyboard.append(InlineKeyboardButton(person.apodo, callback_data=str(person.id)))
         if i % 3 == 2 or i == len(data) - 1:
             keyboard.append(part_keyboard)
             part_keyboard = []
@@ -157,14 +129,10 @@ def set_birthday5(update: Update, context: CallbackContext):
     tts = gTTS(context.user_data["cancion"], lang=context.user_data["idioma"])
     tts.save(f"Felicitacion de su majestad para {context.user_data['personaId']}.mp3")
 
-    context.bot.sendMessage(chat_id=chat_id, parse_mode="HTML",
-                            text=f"Felicidades <b>{context.user_data['personaId']}</b>!!!!!")
-    context.bot.sendSticker(chat_id=chat_id,
-                            sticker=update.message.sticker.file_id)
-    context.bot.sendAudio(chat_id=chat_id,
-                          audio=open(f"Felicitacion de su majestad para {context.user_data['personaId']}.mp3", "rb"))
-    db.update_cumple(context.user_data["personaId"], context.user_data["cancion"], context.user_data["idioma"],
-                     update.message.sticker.file_id)
+    context.bot.sendMessage(chat_id=chat_id, parse_mode="HTML", text=f"Felicidades <b>{context.user_data['personaId']}</b>!!!!!")
+    context.bot.sendSticker(chat_id=chat_id, sticker=update.message.sticker.file_id)
+    context.bot.sendAudio(chat_id=chat_id, audio=open(f"Felicitacion de su majestad para {context.user_data['personaId']}.mp3", "rb"))
+    db.update_birth(context.user_data["personaId"], context.user_data["cancion"], context.user_data["idioma"], update.message.sticker.file_id)
     return ConversationHandler.END
 
 
