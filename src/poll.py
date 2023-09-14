@@ -129,7 +129,7 @@ def democracy(update: Update, context: CallbackContext) -> None:
     data = db.select("data")
     polls = db.select("encuestas")
     polls = polls[~polls.end]
-    text = "Estos son los miserables que odian la democracia:\n"
+    text1 = "Estos son los miserables que odian la democracia:\n"
     for _, persona in data.iterrows():
         questions = ""
         total = 0
@@ -139,18 +139,18 @@ def democracy(update: Update, context: CallbackContext) -> None:
                 total += 1
 
         if questions:
-            text += f"- <a href='tg://user?id={persona.id}'>{persona.apodo}</a>"
+            text1 += f"- <a href='tg://user?id={persona.id}'>{persona.apodo}</a>"
             if total == 1:
-                text += "\n"
+                text1 += "\n"
             else:
-                text += f"x{total}\n"
-            text = f"{persona.apodo}, al vivir en una democracia tienes derecho a votar en las encuestas\n" + questions
+                text1 += f"x{total}\n"
+            text2 = f"{persona.apodo}, al vivir en una democracia tienes derecho a votar en las encuestas\n" + questions
             try:
-                context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text)
+                context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text2)
             except BadRequest:
-                print(f"{persona.apodo} con id {persona.id} NO tiene activado el bot")
+                logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot")
 
-    context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text)
+    context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text1)
 
 
 def bot_activated(update: Update, context: CallbackContext) -> None:
