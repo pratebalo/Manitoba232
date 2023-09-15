@@ -2,6 +2,7 @@ from utils.sheets_drive import spreadsheets, get_sheet, append_data, clear_sheet
 import warnings
 import logging
 import pandas as pd
+import src.utilitys as ut
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 
@@ -418,6 +419,8 @@ def modificar_cantidades(update: Update, context: CallbackContext):
 def menu(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     user = update.effective_user
+
+    ut.set_actual_user(user.id, context)
     id_mensaje = update.message.message_id
 
     logger.warning(f"{update.effective_chat.type} -> {user.first_name} entró en el comando menu")

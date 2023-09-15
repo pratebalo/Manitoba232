@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 import logging
+import src.utilitys as ut
 from decouple import config
 from utils import client_drive
 
@@ -14,6 +15,8 @@ FOLDER_BASE = config("FOLDER_BASE")
 
 
 def drive(update: Update, context: CallbackContext):
+
+    ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} entró en el comando drive")
 
     chat_id = update.effective_chat.id

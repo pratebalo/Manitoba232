@@ -10,6 +10,7 @@ from telegram.ext import (
 from datetime import datetime
 from gtts import gTTS
 import pandas as pd
+import src.utilitys as ut
 from utils import database as db
 import random
 from decouple import config
@@ -48,6 +49,8 @@ def birthday(context: CallbackContext):
 def get_birthday(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     context.bot.deleteMessage(chat_id, update.message.message_id)
+
+    ut.set_actual_user(update.effective_user.id, context)
     data = db.select("data")
     year = datetime.now().year
     data.cumple = pd.to_datetime(data.cumple, format='%d/%m').apply(lambda dt: dt.replace(year=year))
@@ -62,6 +65,8 @@ def get_birthday(update: Update, context: CallbackContext):
 
 def get_all_birthday(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+
+    ut.set_actual_user(update.effective_user.id, context)
     context.bot.deleteMessage(chat_id, update.message.message_id)
     data = db.select("data")
     year = datetime.now().year
@@ -81,6 +86,8 @@ def get_all_birthday(update: Update, context: CallbackContext):
 def set_birthday(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     data = db.select("data")
+
+    ut.set_actual_user(update.effective_user.id, context)
     context.bot.deleteMessage(chat_id, update.message.message_id)
     keyboard = []
     part_keyboard = []

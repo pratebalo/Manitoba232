@@ -1,13 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CommandHandler,
-    CallbackQueryHandler,
-    ConversationHandler,
-    CallbackContext,
-    MessageHandler,
-    Filters
-)
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
+
 import logging
+import src.utilitys as ut
 from utils import database as db
 from decouple import config
 
@@ -43,11 +38,14 @@ class MyTranslationCalendar(DetailedTelegramCalendar):
 
 
 def start(update: Update, context: CallbackContext):
+
+    ut.set_actual_user(update.effective_user.id, context)
     data = db.select("data")
     context.bot.deleteMessage(update.message.chat_id, update.message.message_id)
     user_id = int(update.effective_user.id)
     chat_id = int(update.effective_chat.id)
 
+    ut.set_actual_user(update.effective_user.id, context)
     nombre = update.effective_user.first_name
     fila = data.loc[data.id == user_id]
     if len(fila) == 1:

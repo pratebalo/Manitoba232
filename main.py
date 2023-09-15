@@ -3,11 +3,11 @@ import logging
 import requests
 import pytz
 import pandas as pd
+import src.utilitys as ut
 from decouple import config
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import (CommandHandler, PollAnswerHandler, CallbackQueryHandler, ConversationHandler, CallbackContext,
-                          MessageHandler, Filters, Updater
-                          )
+from telegram.ext import CommandHandler, PollAnswerHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters, Updater
+
 from datetime import datetime, time, timedelta
 from utils.sheets_drive import generate_sheet_sections
 from gtts import gTTS
@@ -54,6 +54,8 @@ def muditos(context: CallbackContext):
 def echo(update: Update, context: CallbackContext):
     data = db.select("data")
     user_id = int(update.effective_user.id)
+
+    ut.set_actual_user(update.effective_user.id, context)
     nombre = update.effective_user.first_name
     fila = data.loc[data.id == user_id]
     if len(fila) == 1:
@@ -125,6 +127,7 @@ def echo(update: Update, context: CallbackContext):
 def loquendo(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     user = update.effective_user
+    ut.set_actual_user(user.id, context)
     logger.warning(f"{update.effective_chat.type} -> User {user.first_name} entro en el comando loquendo")
     # Send message with text and appended InlineKeyboard
     context.bot.deleteMessage(update.message.chat_id, update.message.message_id)
@@ -189,6 +192,8 @@ def end_loquendo(update: Update, context: CallbackContext):
 def culos(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     user = update.effective_user
+
+    ut.set_actual_user(user.id, context)
     logger.warning(f"{update.effective_chat.type} -> User {user.first_name} entro en el comando culos")
     # Send message with text and appended InlineKeyboard
     context.user_data["oldMessage"] = context.bot.sendMessage(chat_id,
@@ -234,6 +239,8 @@ def culos2(update: Update, context: CallbackContext):
 
 def pietrobot(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+
+    ut.set_actual_user(update.effective_user.id, context)
     context.bot.deleteMessage(chat_id, update.message.message_id)
 
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha entrado en pietrobot")
@@ -270,6 +277,9 @@ def end_pietrobot(update: Update, context: CallbackContext):
 
 def listados(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+
+    ut.set_actual_user(update.effective_user.id, context)
+
     logger.warning(
         f"{update.effective_chat.type} -> {update.effective_user.first_name} ha entrado en el comando listados")
     generate_sheet_sections()

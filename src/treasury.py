@@ -3,6 +3,7 @@ import re
 import requests
 import os
 import pandas as pd
+import src.utilitys as ut
 from utils.sheets_drive import get_sheet, append_data, clear_sheet
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
@@ -22,6 +23,7 @@ logger = logging.getLogger("treasury")
 
 
 def treasury(update: Update, context: CallbackContext):
+    ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} entro en el comando tesoreria")
     if update.message:
         update.message.delete()

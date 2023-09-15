@@ -154,6 +154,8 @@ def democracy(update: Update, context: CallbackContext) -> None:
 
 
 def bot_activated(update: Update, context: CallbackContext) -> None:
+
+    ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando bot_activado")
     data = db.select("data")
     db.update_bot_activated_all()
