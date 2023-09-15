@@ -4,6 +4,7 @@ import requests
 import os
 import pandas as pd
 import src.utilitys as ut
+from datetime import datetime
 from utils.sheets_drive import get_sheet, append_data, clear_sheet
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
@@ -93,6 +94,7 @@ def delete_expense2(update: Update, context: CallbackContext):
     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha eliminado el gasto '{expense}'")
     client_drive.delete_file(expense.id_file)
     expenses_state(update, context)
+    update_drive_expenses()
     return EXPENSES
 
 
@@ -139,6 +141,7 @@ def edit_price2(update: Update, context: CallbackContext):
         db.update_field_table(idx=context.user_data["expense"].id, table="expenses", values=[new_price], fields=["price"])
 
         edit_expense(update, context)
+        update_drive_expenses()
         return EDIT_EXPENSE
 
     except ValueError:
@@ -161,6 +164,7 @@ def edit_concept2(update: Update, context: CallbackContext):
     db.update_field_table(idx=context.user_data["expense"].id, table="expenses", values=[new_concept], fields=["concept"])
 
     edit_expense(update, context)
+    update_drive_expenses()
     return EDIT_EXPENSE
 
 
@@ -186,109 +190,108 @@ def edit_ticket2(update: Update, context: CallbackContext):
     client_drive.delete_file(context.user_data['expense'].id_file)
 
     edit_expense(update, context)
+    update_drive_expenses()
     return EDIT_EXPENSE
 
-    #
-    # def bote_state(update: Update, context: CallbackContext):
-    #     context.user_data["expense_type"] = update.callback_query.data
-    #
-    #     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    #     context.user_data["oldMessage"] =
-    #             update.callback_query.edit_message_text(f"{update.effective_user.first_name}: ¿Cuánto dinero?", reply_markup=keyboard)
-    #
-    #     return POT
-    #
-    #
-    # def bote2(update: Update, context: CallbackContext):
-    #     logger.warning(f"{update.effective_chat.type} -> "
-    #                    f"{update.effective_user.first_name} ha enviado la cantidad {update.message.text}")
-    #     context.user_data["price"] = re.sub('[^\\d.]', '', update.message.text.replace(",", "."))
-    #     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
-    #     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
-    #     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    #     try:
-    #         float(context.user_data["price"])
-    #         context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id, f"{update.effective_user.first_name}: ¿Cúal es el motivo?",
-    #                                                                   reply_markup=keyboard)
-    #         return POT2
-    #
-    #     except ValueError:
-    # context.user_data["oldMessage"] = \
-    #     context.bot.sendMessage(update.effective_chat.id, f"{update.effective_user.first_name}: La cantidad introducida no es valida, pruebe de nuevo",
-    #                             reply_markup=keyboard)
+
+def bote_state(update: Update, context: CallbackContext):
+    context.user_data["expense_type"] = update.callback_query.data
+
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
+    context.user_data["oldMessage"] = update.callback_query.edit_message_text(f"{update.effective_user.first_name}: ¿Cuánto dinero?", reply_markup=keyboard)
+
+    return POT
 
 
-#         return POT
-#
-#
-# def bote3(update: Update, context: CallbackContext):
-#     logger.warning(
-#         f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado el motivo {update.message.text}")
-#
-#     context.user_data["motivo"] = update.message.text
-#     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
-#     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
-#
-#     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-#     context.user_data["oldMessage"] = context.bot.sendMessage(
-#         update.effective_chat.id,
-#         f"{update.effective_user.first_name}: Necesito que me envies una foto o documento del ticket, si no tienes pues enviame un selfie haciendo el idiota",
-#         reply_markup=keyboard)
-#
-#     return POT3
-#
-#
-# def bote4(update: Update, context: CallbackContext):
-#     data = db.select("data")
-#     bote = db.select("botes")
-#     motivo = context.user_data["motivo"]
-#     persona = data[data.id == update.effective_user.id].squeeze()
-#     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
-#     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
-#     logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado una foto")
-#     if context.user_data["expense_type"] == "EXPENSE":
-#         cantidad = float(context.user_data["price"])
-#         if update.message.photo:
-#             photo = True
-#             data_ticket, ext_ticket = download_file_telegram(context, update.message.photo[-1].file_id)
-#         else:
-#             photo = False
-#             data_ticket, ext_ticket = download_file_telegram(context, update.message.document.file_id)
-#         id_expense = db.insert_expense(persona.id,
-#                                        motivo,
-#                                        cantidad,
-#                                        datetime.today().strftime('%d/%m/%Y'),
-#                                        photo)
-#         file_name = f"{id_expense}_{persona.nombre} {persona.apellidos}{ext_ticket}"
-#
-#         id_file = client_drive.upload_file(data=data_ticket, file_name=file_name, parent_id=client_drive.FOLDER_EXPENSES)
-#         db.update_expense_file(id_expense, id_file)
-#         treasurer_message = f"{persona.apodo} ha gastado {cantidad}€ en '{motivo}'"
-#         user_message = f"Has metido el gasto de {cantidad}€ con el concepto '{motivo}'"
-#         filename, file = client_drive.get_file_by_id(id_file)
-#         if photo:
-#             context.bot.sendPhoto(chat_id=ID_TESORERIA, photo=file, caption=treasurer_message)
-#         else:
-#             context.bot.sendDocument(chat_id=ID_TESORERIA, document=file, filename=filename, caption=treasurer_message)
-#     else:
-#         cantidad = float(context.user_data["expense_type"] + context.user_data["price"])
-#         bote_actual = bote.iloc[-1].total + cantidad
-#         db.insert_bote(update.effective_user.id,
-#                        cantidad,
-#                        bote_actual,
-#                        update.message.text)
-#         if context.user_data["expense_type"] == "+":
-#             treasurer_message = f"{persona.apodo} ha metido {context.user_data['price']}€ " \
-#                                 f"en el bote con el concepto '{motivo}'.\nHay {bote_actual}€ en el bote"
-#         else:
-#             treasurer_message = f"{persona.apodo} ha sacado {context.user_data['price']}€ " \
-#                                 f"del bote con el concepto '{motivo}'.\nHay {bote_actual}€ en el bote"
-#         user_message = f"Bote actualizado.\nHay {bote_actual}€ en el bote"
-#         context.bot.sendMessage(ID_TESORERIA, treasurer_message)
-#
-#     context.bot.sendMessage(update.effective_chat.id, user_message)
-#
-#     return ConversationHandler.END
+def bote2(update: Update, context: CallbackContext):
+    logger.warning(f"{update.effective_chat.type} -> "
+                   f"{update.effective_user.first_name} ha enviado la cantidad {update.message.text}")
+    context.user_data["price"] = re.sub('[^\\d.]', '', update.message.text.replace(",", "."))
+    context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
+    context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
+    try:
+        float(context.user_data["price"])
+        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id, f"{update.effective_user.first_name}: ¿Cúal es el motivo?",
+                                                                  reply_markup=keyboard)
+        return POT2
+
+    except ValueError:
+        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id,
+                                                                  f"{update.effective_user.first_name}: La cantidad introducida no es valida, pruebe de nuevo",
+                                                                  reply_markup=keyboard)
+
+        return POT
+
+
+def bote3(update: Update, context: CallbackContext):
+    logger.warning(
+        f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado el motivo {update.message.text}")
+
+    context.user_data["motivo"] = update.message.text
+    context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
+    context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
+
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
+    context.user_data["oldMessage"] = context.bot.sendMessage(
+        update.effective_chat.id,
+        f"{update.effective_user.first_name}: Necesito que me envies una foto o documento del ticket, si no tienes pues enviame un selfie haciendo el idiota",
+        reply_markup=keyboard)
+
+    return POT3
+
+
+def bote4(update: Update, context: CallbackContext):
+    data = db.select("data")
+    bote = db.select("botes")
+    motivo = context.user_data["motivo"]
+    persona = data[data.id == update.effective_user.id].squeeze()
+    context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
+    context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
+    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado una foto")
+    if context.user_data["expense_type"] == "EXPENSE":
+        cantidad = float(context.user_data["price"])
+        if update.message.photo:
+            photo = True
+            data_ticket, ext_ticket = download_file_telegram(context, update.message.photo[-1].file_id)
+        else:
+            photo = False
+            data_ticket, ext_ticket = download_file_telegram(context, update.message.document.file_id)
+        id_expense = db.insert_expense(persona.id,
+                                       motivo,
+                                       cantidad,
+                                       datetime.today().strftime('%d/%m/%Y'),
+                                       photo)
+        file_name = f"{id_expense}_{persona.nombre} {persona.apellidos}{ext_ticket}"
+
+        id_file = client_drive.upload_file(data=data_ticket, file_name=file_name, parent_id=client_drive.FOLDER_EXPENSES)
+        db.update_expense_file(id_expense, id_file)
+        treasurer_message = f"{persona.apodo} ha gastado {cantidad}€ en '{motivo}'"
+        user_message = f"Has metido el gasto de {cantidad}€ con el concepto '{motivo}'"
+        filename, file = client_drive.get_file_by_id(id_file)
+        if photo:
+            context.bot.sendPhoto(chat_id=ID_TESORERIA, photo=file, caption=treasurer_message)
+        else:
+            context.bot.sendDocument(chat_id=ID_TESORERIA, document=file, filename=filename, caption=treasurer_message)
+    else:
+        cantidad = float(context.user_data["expense_type"] + context.user_data["price"])
+        bote_actual = bote.iloc[-1].total + cantidad
+        db.insert_bote(update.effective_user.id,
+                       cantidad,
+                       bote_actual,
+                       update.message.text)
+        if context.user_data["expense_type"] == "+":
+            treasurer_message = f"{persona.apodo} ha metido {context.user_data['price']}€ " \
+                                f"en el bote con el concepto '{motivo}'.\nHay {bote_actual}€ en el bote"
+        else:
+            treasurer_message = f"{persona.apodo} ha sacado {context.user_data['price']}€ " \
+                                f"del bote con el concepto '{motivo}'.\nHay {bote_actual}€ en el bote"
+        user_message = f"Bote actualizado.\nHay {bote_actual}€ en el bote"
+        context.bot.sendMessage(ID_TESORERIA, treasurer_message)
+
+    context.bot.sendMessage(update.effective_chat.id, user_message)
+    update_drive_expenses()
+    return ConversationHandler.END
 
 
 def download_file_telegram(context, file_id):
@@ -370,6 +373,7 @@ def end_pay(update: Update, context: CallbackContext):
 
     context.bot.sendMessage(update.effective_chat.id, text="Quieres pagar a alguien mas?",
                             reply_markup=InlineKeyboardMarkup(keyboard))
+    update_drive_expenses()
     return FINAL_OPTION
 
 
@@ -465,16 +469,16 @@ def get_conv_handler_treasury():
                      CallbackQueryHandler(pay, pattern='^PAY$'),
                      CallbackQueryHandler(account, pattern='^ACCOUNT'),
                      CallbackQueryHandler(expenses_state, pattern='^MINE'),
-                     # CallbackQueryHandler(bote_state),
+                     CallbackQueryHandler(bote_state),
                      ],
             IBAN: [MessageHandler(Filters.text & ~Filters.command, account2),
                    CallbackQueryHandler(treasury, pattern='^BACK$')],
-            # POT: [MessageHandler(Filters.text & ~Filters.command, bote2),
-            #       CallbackQueryHandler(treasury, pattern='^CANCEL$')],
-            # POT2: [MessageHandler(Filters.text & ~Filters.command, bote3),
-            #        CallbackQueryHandler(treasury, pattern='^CANCEL$')],
-            # POT3: [MessageHandler((Filters.photo | Filters.document) & ~Filters.command, bote4),
-            #        CallbackQueryHandler(treasury, pattern='^CANCEL$')],
+            POT: [MessageHandler(Filters.text & ~Filters.command, bote2),
+                  CallbackQueryHandler(treasury, pattern='^CANCEL$')],
+            POT2: [MessageHandler(Filters.text & ~Filters.command, bote3),
+                   CallbackQueryHandler(treasury, pattern='^CANCEL$')],
+            POT3: [MessageHandler((Filters.photo | Filters.document) & ~Filters.command, bote4),
+                   CallbackQueryHandler(treasury, pattern='^CANCEL$')],
             PAY: [CallbackQueryHandler(end, pattern='^END$'),
                   CallbackQueryHandler(treasury, pattern='^BACK'),
                   CallbackQueryHandler(pay2, pattern='^PAY')],
