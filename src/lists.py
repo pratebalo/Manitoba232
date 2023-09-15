@@ -199,7 +199,7 @@ def list_to_text(my_list):
 
 def edit_list_manual(update: Update, context: CallbackContext):
     all_lists = db.select("lists")
-
+    ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{context.user_data['user'].apodo} ha editado la lista con el mensaje\n{update.message.text} ")
 
     poll_name = (update.message.text.split(":\n"))[1]
