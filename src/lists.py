@@ -75,11 +75,18 @@ def create_list(update: Update, context: CallbackContext):
     logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} seleccionó crear lista")
 
     context.bot.deleteMessage(query.message.chat_id, query.message.message_id)
+
+    text = "Esto es una lista numerada:\n  1. Elemento1\n  2. Todo tiene un espaciado al principio y un numero\n  3. Y se actualizan los numeros " \
+           "automaticamente\n----------------------------\nEsto es una lista con guiones:\n  - Elemento1\n  - Igual que la numerada pero sin numeros" \
+           "\n----------------------------\nEsto es una lista sin formato:\nPuedes poner todo\n -como\n -quieras\n" \
+           "       y lo mantiene sin editar\n+tal como está\n "
+    context.user_data["oldMessage"] = context.bot.sendMessage(query.message.chat_id, text=text)
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Lista numerada", callback_data="NUMBERED"), InlineKeyboardButton("Lista normal", callback_data="NORMAL")],
+        [[InlineKeyboardButton("Lista numerada", callback_data="NUMBERED"), InlineKeyboardButton("Lista con guiones", callback_data="NORMAL"),
+          InlineKeyboardButton("Sin formato", callback_data="UNFORMAT")],
          [InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    context.user_data["oldMessage"] = context.bot.sendMessage(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
-                                                              text=f"{context.user_data['user'].apodo}: Qué tipo de lista quieres crear?")
+    context.bot.sendMessage(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
+                            text=f"{context.user_data['user'].apodo}: Qué tipo de lista quieres crear?")
 
     return CREATE_LIST
 
@@ -91,9 +98,9 @@ def create_list2(update: Update, context: CallbackContext):
 
     context.bot.deleteMessage(query.message.chat_id, query.message.message_id)
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
+    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
     context.user_data["oldMessage"] = context.bot.sendMessage(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
                                                               text=f"{context.user_data['user'].apodo}: Escribe el nombre de la lista")
-
     return CREATE_LIST2
 
 
@@ -183,6 +190,8 @@ def list_to_text(my_list):
     for n, element in enumerate(my_list.elements):
         if my_list.type_list == "NUMBERED":
             text += f"  {n + 1}. {element}\n"
+        elif my_list.type_list == "UNFORMAT":
+            text += f"{element}\n"
         else:
             text += f"  - {element}\n"
     return text
@@ -197,11 +206,11 @@ def edit_list_manual(update: Update, context: CallbackContext):
     my_list = all_lists[all_lists.list_name == poll_name].squeeze()
     elements = (update.message.text.split(":\n", 2))[2].split("\n")
     if my_list.type_list == "NUMBERED":
-        elements2 = [re.sub(r"^\s* *[0-9]*[.]* *", r"", element) for element in elements]
-    else:
-        elements2 = [re.sub(r"^[ -]*(.*)", r"\1", element) for element in elements]
-    my_list.elements = elements2
-    my_list.tipo_elementos = [0] * len(elements2)
+        elements = [re.sub(r"^\s* *[0-9]*[.]* *", r"", element) for element in elements]
+    elif my_list.type_list == "NORMAL":
+        elements = [re.sub(r"^[ -]*(.*)", r"\1", element) for element in elements]
+    my_list.elements = elements
+    my_list.tipo_elementos = [0] * len(elements)
     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
     try:
         context.bot.deleteMessage(ID_MANITOBA, int(my_list.message_id))
