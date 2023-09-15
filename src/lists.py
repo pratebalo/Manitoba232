@@ -6,6 +6,7 @@ import pandas as pd
 import src.utilitys as ut
 import logging
 import re
+import unicodedata
 from datetime import datetime
 from utils import database as db
 from decouple import config
@@ -208,7 +209,7 @@ def edit_list_manual(update: Update, context: CallbackContext):
     if my_list.type_list == "NUMBERED":
         elements = [re.sub(r"^\s* *[0-9]*[.]* *", r"", element) for element in elements]
     elif my_list.type_list == "NORMAL":
-        elements = [re.sub(r"^[ -]*(.*)", r"\1", element) for element in elements]
+        elements = [re.sub(r"^\s* *-* *", "", element) for element in elements]
     my_list.elements = elements
     my_list.tipo_elementos = [0] * len(elements)
     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
