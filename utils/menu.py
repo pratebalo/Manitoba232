@@ -3,12 +3,11 @@ import warnings
 import logging
 import pandas as pd
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
-from telegram.ext import (CommandHandler, PollAnswerHandler, CallbackQueryHandler, ConversationHandler, CallbackContext,
-                          MessageHandler, Filters, Updater
-                          )
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 
-MENU1, MENU2, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, ELIMINAR_LISTA, \
-    FINAL_OPTION = range(9)
+from decouple import config
+
+MENU1, MENU2, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, ELIMINAR_LISTA, FINAL_OPTION = range(9)
 warnings.filterwarnings("ignore")
 
 logging.basicConfig(
@@ -16,8 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("menu")
 logging.getLogger('apscheduler').propagate = False
-ID_ACAMPADA = '1rzVO8jNACvcynnaaAJd83nFpsEk7hbnL9XSXNFEpPO4'
-ID_VERANO = ''
+
+ID_ACAMPADA = config("ID_ACAMPADA")
+ID_TESORERIA = config("ID_TESORERIA")
 sheet = get_sheet(ID_ACAMPADA)
 
 lista_comidas = ['Desayuno', 'Almuerzo', 'Comida', 'Merienda', 'Cena', 'Pan', 'Postre']

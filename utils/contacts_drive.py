@@ -1,4 +1,3 @@
-from __future__ import print_function
 import pandas as pd
 import os.path
 import logging
@@ -37,14 +36,14 @@ if not creds or not creds.valid:
 service = build('people', 'v1', credentials=creds, cache_discovery=False)
 
 
-def update_contacts(context: CallbackContext):
-    resultset = service.people().connections().list(
+def update_contacts(_: CallbackContext):
+    result_set = service.people().connections().list(
         resourceName='people/me',
         pageSize=2000,
         personFields='names,emailAddresses,phoneNumbers,biographies,memberships,metadata').execute()
 
     series_list = []
-    for contact in resultset['connections']:
+    for contact in result_set['connections']:
         data = [contact['names'][0].get('givenName', ''), contact['names'][0].get('familyName', '')]
         data.extend([contact[col][0]['value'] if col in contact else '' for col in
                      ['biographies', 'emailAddresses', 'phoneNumbers']])

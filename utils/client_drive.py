@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import logging
 import os.path
 from googleapiclient.discovery import build
@@ -45,6 +43,10 @@ if not creds or not creds.valid:
 
 drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("client_drive")
 
 def get_sheets_by_id(file_id, mime_type):
     if mime_type == "application/vnd.google-apps.spreadsheet":
@@ -200,7 +202,7 @@ def delete_file(file_id):
     try:
         drive_service.files().delete(fileId=file_id).execute()
     except Exception as e:
-        logging.error(f"Error al eliminar el archivo: {str(e)}")
+        logger.error(f"Error al eliminar el archivo: {str(e)}")
 
 
 def move_file_to_folder(file_id, folder_id):
@@ -214,4 +216,4 @@ def move_file_to_folder(file_id, folder_id):
             fields='id,parents'
         ).execute()
     except Exception as e:
-        logging.error(f"Error al mover el archivo: {str(e)}")
+        logger.error(f"Error al mover el archivo: {str(e)}")

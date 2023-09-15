@@ -1,7 +1,7 @@
-from __future__ import print_function
 import os.path
 import random
 import utils.gillweb as gillweb
+import logging
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -21,6 +21,10 @@ SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/a
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("sheets_drive")
 if os.path.exists(ROOT_DIR + '/token.json'):
     creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)
@@ -54,7 +58,7 @@ def create_sheet(sheet_name, folder_id):
         return sheet
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def append_data(sheet, worksheet_name, cell_range_insert, values):
@@ -74,7 +78,7 @@ def append_data(sheet, worksheet_name, cell_range_insert, values):
         return response
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def add_sheets(gsheet_id, sheet_name):
@@ -106,7 +110,7 @@ def add_sheets(gsheet_id, sheet_name):
         return response
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def delete_sheet(gsheet_id, sheet_id):
@@ -127,21 +131,21 @@ def delete_sheet(gsheet_id, sheet_id):
         return response
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
-def clear_sheet(gsheet_id, sheet_name):
+def clear_sheet(gsheet_id, sheet_name, ranged='A1:Z'):
     try:
         response = spreadsheets.values().clear(
             spreadsheetId=gsheet_id,
             body={},
-            range=f'{sheet_name}!A1:Z'
+            range=f'{sheet_name}!{ranged}'
         ).execute()
 
         return response
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def get_sheet(gsheet_id):
@@ -156,7 +160,7 @@ def rename_file(file_id, new_name):
         return drive.files().update(fileId=file_id, body=body).execute()
 
     except Exception as e:
-        print(e)
+        logger.error(e)
 
 
 def generate_sheet_sections():

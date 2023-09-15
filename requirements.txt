@@ -16,3 +16,4 @@ unidecode
 python-decouple
 pytz
 psycopg2
+sqlalchemy

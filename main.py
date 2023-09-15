@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
 from utils import contacts_drive as contacts, menu
-from src import poll, tareas, birthday, lists, tesoreria, new_member, drive
+from src import poll, tareas, birthday, lists, treasury, new_member, drive
 
 warnings.filterwarnings("ignore")
 
@@ -65,7 +65,7 @@ def echo(update: Update, context: CallbackContext):
             if update.message.text:
                 # logger.info(f"{update.effective_chat.type} -> {fila.apodo} ha enviado {update.message.text}. Con un total de {fila.total_mensajes} mensajes")
                 if "la lista:\n" in update.message.text:
-                    listas.edit_list_manual(update, context)
+                    lists.edit_list_manual(update, context)
 
             elif update.message.sticker:
                 fila.sticker += 1
@@ -315,8 +315,8 @@ if __name__ == "__main__":
 
     )
 
-    dp.add_handler(lists.get_conv_handler_listas())
-    dp.add_handler(tesoreria.get_conv_handler_tesoreria())
+    dp.add_handler(lists.get_conv_handler_lists())
+    dp.add_handler(treasury.get_conv_handler_treasury())
     dp.add_handler(conv_handler_loquendo)
     dp.add_handler(conv_handler_pietrobot)
     dp.add_handler(birthday.get_conv_handler_birthday())
