@@ -63,7 +63,7 @@ def view_list(update: Update, context: CallbackContext):
     if chat_id == ID_MANITOBA:
         try:
             context.bot.deleteMessage(ID_MANITOBA, int(my_list.message_id))
-        except BadRequest as error:
+        except Exception as error:
             logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
         my_list.message_id = new_message.message_id
         db.update_list(my_list)
@@ -170,7 +170,7 @@ def delete_list2(update: Update, context: CallbackContext):
     text = f"{context.user_data['user'].apodo} ha eliminado la lista:\n{list_to_text(my_list)}"
     try:
         context.bot.deleteMessage(chat_id=ID_MANITOBA, message_id=int(my_list.message_id))
-    except BadRequest as error:
+    except Exception as error:
         logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
 
     context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
@@ -215,7 +215,7 @@ def edit_list_manual(update: Update, context: CallbackContext):
     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
     try:
         context.bot.deleteMessage(ID_MANITOBA, int(my_list.message_id))
-    except BadRequest as error:
+    except Exception as error:
         logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
     text = f"{context.user_data['user'].apodo} ha editado la lista:\n{list_to_text(my_list)}"
     new_message = context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)

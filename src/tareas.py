@@ -206,7 +206,7 @@ def end_creacion(update: Update, context: CallbackContext):
         try:
             context.bot.sendMessage(persona.id, parse_mode="HTML",
                                     text="Se te ha asignado la siguiente tarea:\n" + texto)
-        except:
+        except _ as error:
             context.bot.sendMessage(ID_MANITOBA, text=f"{persona.apodo} no me tiene activado")
             context.bot.sendSticker(ID_MANITOBA, sticker=sticker[random.randint(0, len(sticker) - 1)])
     logger.warning(f"{update.effective_chat.type} -> Se ha creado la tarea {tarea.descripcion}")

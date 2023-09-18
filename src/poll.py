@@ -147,7 +147,7 @@ def democracy(update: Update, context: CallbackContext) -> None:
             text2 = f"{persona.apodo}, al vivir en una democracia tienes derecho a votar en las encuestas\n" + questions
             try:
                 context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text2)
-            except Unauthorized as error:
+            except Exception as error:
                 logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot -> {error}")
 
     context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text1)
@@ -164,7 +164,7 @@ def bot_activated(update: Update, context: CallbackContext) -> None:
             message = context.bot.sendMessage(chat_id=person.id, parse_mode="HTML", text="Test de bot activado")
             context.bot.deleteMessage(message.chat_id, message.message_id)
             # print(f"{persona.apodo} con id {persona.id} tiene activado el bot")
-        except Unauthorized as error:
+        except Exception as error:
             db.update_bot_not_activated(person.id)
             context.bot.sendMessage(chat_id=update.effective_chat.id, parse_mode="HTML",
                                     text=f"{person.apodo} con id {person.id} NO tiene activado el bot")
@@ -186,14 +186,14 @@ def view_poll(update: Update, context: CallbackContext):
     message_id = int(poll.message_id)
     try:
         update.callback_query.delete_message()
-    except BadRequest as error:
+    except Exception as error:
         logger.error(f"Fallo al eliminar el mensaje -> {error}")
     message = context.bot.forwardMessage(update.effective_chat.id, chat, message_id, )
     if update.effective_chat.id == chat:
         db.update_poll(poll.id, poll.votes, message.message_id, poll.last_vote)
         try:
             context.bot.deleteMessage(chat, message_id)
-        except BadRequest as error:
+        except Exception as error:
             logger.error(f"No se puede eliminar el mensaje -> {error}")
 
     polls_state(update, context)
@@ -210,7 +210,7 @@ def delete_poll(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
     try:
         context.bot.deleteMessage(chat, message_id)
-    except BadRequest as error:
+    except Exception as error:
         logger.error(f"No se puede eliminar el mensaje -> {error}")
     polls_state(update, context)
 
