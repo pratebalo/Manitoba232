@@ -3,7 +3,7 @@ from decouple import config
 
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.error import BadRequest
+from telegram.error import BadRequest, Unauthorized
 import src.utilitys as ut
 from utils import database as db
 
@@ -147,7 +147,7 @@ def democracy(update: Update, context: CallbackContext) -> None:
             text2 = f"{persona.apodo}, al vivir en una democracia tienes derecho a votar en las encuestas\n" + questions
             try:
                 context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text2)
-            except BadRequest as error:
+            except Unauthorized as error:
                 logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot -> {error}")
 
     context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text1)
@@ -164,7 +164,7 @@ def bot_activated(update: Update, context: CallbackContext) -> None:
             message = context.bot.sendMessage(chat_id=person.id, parse_mode="HTML", text="Test de bot activado")
             context.bot.deleteMessage(message.chat_id, message.message_id)
             # print(f"{persona.apodo} con id {persona.id} tiene activado el bot")
-        except BadRequest as error:
+        except Unauthorized as error:
             db.update_bot_not_activated(person.id)
             context.bot.sendMessage(chat_id=update.effective_chat.id, parse_mode="HTML",
                                     text=f"{person.apodo} con id {person.id} NO tiene activado el bot")
