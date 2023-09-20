@@ -111,6 +111,7 @@ def assign_persons(update: Update, context: CallbackContext):
         context.user_data['meeting_name'] = update.message.text
         update.message.delete()
         context.bot.deleteMessage(context.user_data['oldMessage'].chat_id, context.user_data['oldMessage'].message_id)
+        logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} escribió {context.user_data['meeting_name']}")
     else:
         if 'EDIT' in update.callback_query.data:
             meeting_id = update.callback_query.data.replace('EDIT', '')
@@ -144,12 +145,14 @@ def assign_persons(update: Update, context: CallbackContext):
 
 def end_creation(update: Update, context: CallbackContext):
     if context.user_data["action"] == "ADD":
-        db.insert_into_table(["section", "meeting_name", "people_id", "date"],
-                             [context.user_data['section'], context.user_data['meeting_name'],
-                              context.user_data['assigned_persons'], datetime.today().strftime('%d/%m/%Y')],
-                             "assistance")
+        assist = db.insert_into_table(["section", "meeting_name", "people_id", "date"],
+                                      [context.user_data['section'], context.user_data['meeting_name'],
+                                       context.user_data['assigned_persons'], datetime.today().strftime('%d/%m/%Y')],
+                                      "assistance")
+        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha añadido la asistencia '{assist.to_list()}'")
     else:
-        db.update_field_table(int(context.user_data['meeting_id']), ["people_id"], [context.user_data['assigned_persons']], "assistance")
+        assist = db.update_field_table(int(context.user_data['meeting_id']), ["people_id"], [context.user_data['assigned_persons']], "assistance")
+        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha actualizado la asistencia '{assist.to_list()}'")
     assistance_state(update, context)
     sheets_drive.generate_sheet_assistance(int(context.user_data['section']))
     return ASSISTANCE
@@ -168,14 +171,10 @@ def delete_assistance(update: Update, context: CallbackContext):
 def delete_assistance2(update: Update, context: CallbackContext):
     id_assistance = int(update.callback_query.data.replace("DELETE", ""))
     assist = db.delete("assistance", id_assistance).iloc[0]
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha eliminado la asistencia '{assist}'")
+    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha eliminado la asistencia '{assist.to_list()}'")
     assistance_state(update, context)
     sheets_drive.generate_sheet_assistance(int(context.user_data['section']))
     return ASSISTANCE
-
-
-for i in range(1, 6):
-    sheets_drive.generate_sheet_assistance(i)
 
 
 def end(update: Update, _: CallbackContext):

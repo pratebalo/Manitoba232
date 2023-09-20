@@ -85,7 +85,7 @@ def insert_into_table(fields, values, table):
     ({", ".join(fields)})
      VALUES ({", ".join(list(map(format_value, values)))})
     RETURNING id;""")
-    connect(query)
+    return connect(query)
 
 
 def select_where(table, clauses, values):
