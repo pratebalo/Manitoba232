@@ -84,7 +84,7 @@ def insert_into_table(fields, values, table):
     INSERT INTO {table}
     ({", ".join(fields)})
      VALUES ({", ".join(list(map(format_value, values)))})
-    RETURNING id;""")
+    RETURNING *;""")
     return connect(query)
 
 
@@ -132,7 +132,7 @@ def insert_list(my_list):
         INSERT INTO lists
         (list_name, elements, type_list, date, creator, message_id)
         VALUES ( '{my_list.list_name}', ARRAY{my_list.elements}, '{my_list.type_list}', '{my_list.date}',{my_list.creator}, {my_list.message_id})
-        RETURNING id;""")
+        RETURNING *;""")
     return connect(query)
 
 
@@ -150,7 +150,7 @@ def insert_bote(persona, cantidad, total, motivo):
     INSERT INTO botes
         (persona, cantidad, total, motivo)
          VALUES ({persona}, {cantidad}, {total}, '{motivo}')
-    RETURNING id;""")
+    RETURNING *;""")
 
     return connect(query)
 
@@ -194,7 +194,7 @@ def insert_poll(id_poll, question, options, votes, url, chat_id, message_id):
     INSERT INTO encuestas    
     (id, question, options, votes, url,chat_id,message_id)
          VALUES ({id_poll}, '{question}', ARRAY{options},ARRAY{votes}::integer[], '{url}',{chat_id},{message_id})
-    RETURNING id;""")
+    RETURNING *;""")
     return connect(query)
 
 
@@ -218,11 +218,12 @@ def connect(query):
     try:
         result = connection.execute(query)
         if result.returns_rows and result.rowcount > 0:
-            row = result.scalar()
+            df = pd.DataFrame(result.fetchall())
         else:
-            row = None
+            df = None
         connection.commit()
-        return row
+        return df
     except Exception as e:
         logger.error(f"Error: {e}")
         return None
+

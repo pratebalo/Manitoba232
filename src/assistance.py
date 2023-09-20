@@ -149,10 +149,10 @@ def end_creation(update: Update, context: CallbackContext):
                                       [context.user_data['section'], context.user_data['meeting_name'],
                                        context.user_data['assigned_persons'], datetime.today().strftime('%d/%m/%Y')],
                                       "assistance")
-        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha añadido la asistencia '{assist.to_list()}'")
+        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha añadido la asistencia '{assist.squeeze().to_list()}'")
     else:
         assist = db.update_field_table(int(context.user_data['meeting_id']), ["people_id"], [context.user_data['assigned_persons']], "assistance")
-        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha actualizado la asistencia '{assist.to_list()}'")
+        logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha actualizado la asistencia '{assist.squeeze().to_list()}'")
     assistance_state(update, context)
     sheets_drive.generate_sheet_assistance(int(context.user_data['section']))
     return ASSISTANCE
