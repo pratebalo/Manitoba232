@@ -1,13 +1,16 @@
 import os.path
 import random
 import utils.gillweb as gillweb
+from decouple import config
 import logging
+import pandas as pd
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 from datetime import datetime
+import utils.database as db
 
 DICT = {
     'application/vnd.google-apps.document': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -42,6 +45,17 @@ if not creds or not creds.valid:
 sheets_service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
 spreadsheets = sheets_service.spreadsheets()
 drive = build('drive', 'v3', credentials=creds, cache_discovery=False)
+
+ID_SHEET_CASTORES = config('ID_SHEET_CASTORES')
+ID_SHEET_MANADA = config('ID_SHEET_MANADA')
+ID_SHEET_TROPA = config('ID_SHEET_TROPA')
+ID_SHEET_ESCULTAS = config('ID_SHEET_ESCULTAS')
+ID_SHEET_ROVER = config('ID_SHEET_ROVER')
+
+sheet_sections = {
+    1: ID_SHEET_CASTORES, 2: ID_SHEET_MANADA, 3: ID_SHEET_TROPA, 4: ID_SHEET_ESCULTAS, 5: ID_SHEET_ROVER
+
+}
 
 
 def create_sheet(sheet_name, folder_id):
@@ -179,3 +193,40 @@ def generate_sheet_sections():
         data = [x.columns.values.tolist()]
         data.extend(x.values.tolist())
         append_data(sheet, section, 'H3', data)
+
+
+def generate_sheet_assistance(section):
+    sheet_id = sheet_sections[section]
+    assistance = db.select_where("assistance", ["section"], [section]).sort_values('date')
+    sheet = get_sheet(sheet_id)
+    data_gillweb = gillweb.download_data_gillweb(section)[['id', 'name', 'surname']]
+    result_df = data_gillweb.copy()
+    trim = ['2024-01-10', '2024-04-07', '2024-09-16']
+    pos = 0
+    total = 0
+
+    for index, row in assistance.iterrows():
+        if row["date"] > datetime.strptime(trim[pos], "%Y-%m-%d").date():
+            if total != 0:
+                result_df[f"Trimestre {pos + 1}"] = result_df[result_df.columns[-total:]].sum(axis=1)
+            pos += 1
+            total = 0
+        attendees = row['people_id']
+        result_df[row['meeting_name']] = result_df['id'].apply(lambda x: 1 if x in attendees else 0)
+        total += 1
+
+    if "Trimestre" not in result_df.columns[-1] and len(result_df.columns) > 3:
+        result_df[f"Trimestre {pos + 1}"] = result_df[result_df.columns[-total:]].sum(axis=1)
+        pos += 1
+
+    quarters_col = [index for index, column_name in enumerate(result_df.columns) if 'Trimestre' in column_name]
+
+    result_df[f"Total"] = result_df.iloc[:, quarters_col].sum(axis=1)
+    result_df[assistance.meeting_name] = result_df[assistance.meeting_name].replace({1: 'SI', 0: 'NO'})
+    result_df.sort_values('Total', inplace=True, ascending=False)
+    result_df.drop("id", inplace=True, axis=1)
+    result_df = result_df.rename(columns={"name": "Nombre", "surname": "Apellidos"})
+    clear_sheet(sheet_id, 'Asistencia')
+    data = [result_df.columns.tolist()]
+    data.extend(result_df.values.tolist())
+    append_data(sheet, 'Asistencia', 'B2', data)

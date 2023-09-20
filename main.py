@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 from utils import database as db
 from utils import contacts_drive as contacts, menu
-from src import poll, tareas, birthday, lists, treasury, new_member, drive
+from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance
 
 warnings.filterwarnings("ignore")
 
@@ -333,6 +333,7 @@ if __name__ == "__main__":
     dp.add_handler(conv_handler_culos)
     dp.add_handler(tareas.get_conv_handler_tareas())
     dp.add_handler(menu.get_conv_handler_menu())
+    dp.add_handler(assistance.get_conv_handler_assistance())
     dp.add_handler(CommandHandler('cumples', birthday.get_birthday))
     dp.add_handler(CommandHandler('allcumples', birthday.get_all_birthday))
     dp.add_handler(CommandHandler('listados', listados))

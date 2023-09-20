@@ -48,10 +48,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("client_drive")
 
+
 def get_sheets_by_id(file_id, mime_type):
     if mime_type == "application/vnd.google-apps.spreadsheet":
-        request = drive_service.files().export_media(fileId=file_id,
-                                                     mimeType='application/x-vnd.oasis.opendocument.spreadsheet')
+        request = drive_service.files().export_media(fileId=file_id, mimeType='application/x-vnd.oasis.opendocument.spreadsheet')
     elif mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
         request = drive_service.files().get_media(fileId=file_id)
     else:

@@ -55,9 +55,7 @@ def recordar_tareas(context: CallbackContext):
 
 
 def tareas(update: Update, context: CallbackContext):
-
     ut.set_actual_user(update.effective_user.id, context)
-    recordar_tareas(context)
     if update.message:
         context.user_data["ediciones"] = []
         context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)

@@ -458,9 +458,6 @@ def update_drive_expenses():
     append_data(sheet, 'Historial', 'B3', result.values.tolist())
 
 
-update_drive_expenses()
-
-
 def get_conv_handler_treasury():
     return ConversationHandler(
         entry_points=[CommandHandler('tesoreria', treasury)],

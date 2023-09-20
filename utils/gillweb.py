@@ -27,9 +27,9 @@ def get_data_gillweb():
          "father_phone": lambda x: ", ".join(sorted(set(filter(None, x)))),
          "scout_section": lambda x: tuple(sorted(set(list(
              x.replace('Castor', 'e042ea48c0ca0db').replace('Lobato', '2dca868d8a090f2f')
-                 .replace('Scout', 'ddb3a430c7d514f').replace('Esculta', '19bd885b8fdf19b3')
-                 .replace('Rover', '28bd46840ad37aa1')) + ["43b294f70ae0f4a7",
-                                                           "myContacts"])))}).reset_index().rename_axis(None, axis=1)
+             .replace('Scout', 'ddb3a430c7d514f').replace('Esculta', '19bd885b8fdf19b3')
+             .replace('Rover', '28bd46840ad37aa1')) + ["43b294f70ae0f4a7",
+                                                       "myContacts"])))}).reset_index().rename_axis(None, axis=1)
     data3 = data[(data.mother_name != "") & (data.mother_email != "")]. \
         groupby(["mother_name", "mother_surname"]).agg(
         {"complete_name": lambda x: "Madre de " + ", ".join(x),
@@ -37,9 +37,9 @@ def get_data_gillweb():
          "mother_phone": lambda x: ", ".join(sorted(set(filter(None, x)))),
          "scout_section": lambda x: tuple(sorted(set(list(
              x.replace('Castor', 'e042ea48c0ca0db').replace('Lobato', '2dca868d8a090f2f')
-                 .replace('Scout', 'ddb3a430c7d514f').replace('Esculta', '19bd885b8fdf19b3')
-                 .replace('Rover', '28bd46840ad37aa1')) + ["43b294f70ae0f4a7",
-                                                           "myContacts"])))}).reset_index().rename_axis(None, axis=1)
+             .replace('Scout', 'ddb3a430c7d514f').replace('Esculta', '19bd885b8fdf19b3')
+             .replace('Rover', '28bd46840ad37aa1')) + ["43b294f70ae0f4a7",
+                                                       "myContacts"])))}).reset_index().rename_axis(None, axis=1)
     data2.columns = ['givenName', 'familyName', 'biographies', 'emailAddresses', 'phoneNumbers', 'memberships']
     data3.columns = ['givenName', 'familyName', 'biographies', 'emailAddresses', 'phoneNumbers', 'memberships']
     data_final = pd.concat([data2, data3])
@@ -70,14 +70,17 @@ def get_gillweb_csv():
     data_final.to_csv("contactos.csv", sep=";", index=False)
 
 
-def download_data_gillweb():
+def download_data_gillweb(section: int = None):
     data = []
     for i in range(0, 10):
         try:
             url = "https://www.gillweb.es/core/api.php?controller=user&action=login"
-            token = requests.post(url, data={"login": "LYDIA222", "password": "1234Aa"}, timeout=1).json()["data"]
+            token = requests.post(url, data={"login": user, "password": password}, timeout=1).json()["data"]
 
             url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
+
+            if section:
+                url += f"&filter%5B1%5D%5B%5D=scout_subsection.scout_section&filter%5B1%5D%5B%5D=%3D&filter%5B1%5D%5B%5D={section}"
             csv = requests.get(url).text
 
             data = pd.read_csv(StringIO(csv), sep=";", encoding="utf-8",

@@ -1,5 +1,4 @@
 import logging
-
 import pandas as pd
 import json
 
@@ -12,6 +11,7 @@ DATABASE = config("DATABASE")
 PASSWORD_DB = config("PASSWORD_DB")
 engine = create_engine(f'postgresql://{USER_DB}:{PASSWORD_DB}@{HOST}/{DATABASE}')
 connection = engine.connect()
+logger = logging.getLogger("database")
 
 
 def select(table):
@@ -56,18 +56,19 @@ def update_data_start(idx, name, surname, nick, gender, birth, birth_year):
 
 
 def format_value(val):
-    if isinstance(val, str):
-        return "'{}'".format(val)
-    elif isinstance(val, (int, float)):
-        return str(val)
-    elif isinstance(val, bool):
-        return 'TRUE' if val else 'FALSE'
-    elif val is None:
-        return 'NULL'
-    elif isinstance(val, list):
-        return "ARRAY{}".format(val)
-    else:
-        raise ValueError("Tipo de dato no soportado: {}".format(type(val)))
+    match val:
+        case str():
+            return "'{}'".format(val)
+        case int() | float():
+            return str(val)
+        case bool():
+            return 'TRUE' if val else 'FALSE'
+        case None:
+            return 'NULL'
+        case list():
+            return "ARRAY{}".format(val)
+        case _:
+            raise ValueError("Tipo de dato no soportado: {}".format(type(val)))
 
 
 def update_field_table(idx, fields, values, table):
@@ -76,6 +77,22 @@ def update_field_table(idx, fields, values, table):
         SET {", ".join([f"{field} = {format_value(value)}" for field, value in zip(fields, values)])}
         WHERE id = {idx};""")
     connect(query)
+
+
+def insert_into_table(fields, values, table):
+    query = text(f"""set DateStyle='ISO, DMY';
+    INSERT INTO {table}
+    ({", ".join(fields)})
+     VALUES ({", ".join(list(map(format_value, values)))})
+    RETURNING id;""")
+    connect(query)
+
+
+def select_where(table, clauses, values):
+    query = text(f"""SELECT * FROM {table} 
+    WHERE {" AND ".join([f"{field} = {format_value(value)}" for field, value in zip(clauses, values)])} """)
+    result = pd.read_sql(query, engine).sort_values(by="id", ignore_index=True)
+    return result
 
 
 def update_bot_activated_all():
@@ -207,5 +224,5 @@ def connect(query):
         connection.commit()
         return row
     except Exception as e:
-        logger.ERROR(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return None
