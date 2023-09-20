@@ -18,15 +18,16 @@ download_thread = None
 
 
 def assistance_state(update: Update, context: CallbackContext):
+    ut.set_actual_user(update.effective_user.id, context)
+
     if update.message:
         update.message.delete()
+        logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entro en el comando asistencia")
     else:
         update.callback_query.delete_message()
     if update.effective_chat.id == ID_MANITOBA:
         context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /asistencia")
         return
-    ut.set_actual_user(update.effective_user.id, context)
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entro en el comando asistencia")
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Añadir asistencia", callback_data="ADD")],
                                          [InlineKeyboardButton("Modificar asistencia", callback_data="EDIT")],
                                          [InlineKeyboardButton("Ver resumen asistencia", callback_data="VIEW")],
@@ -159,6 +160,8 @@ def end_creation(update: Update, context: CallbackContext):
 
 
 def delete_assistance(update: Update, context: CallbackContext):
+
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} selectionó DELETE")
     text = f"¿Seguro que quieres eliminar la asistencia?"
     keyboard = [[InlineKeyboardButton("Eliminar", callback_data=update.callback_query.data),
                  InlineKeyboardButton("Volver atrás", callback_data="BACK")]]
@@ -177,9 +180,9 @@ def delete_assistance2(update: Update, context: CallbackContext):
     return ASSISTANCE
 
 
-def end(update: Update, _: CallbackContext):
+def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
-
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
     return ConversationHandler.END
 
 

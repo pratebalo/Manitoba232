@@ -75,8 +75,9 @@ def update_field_table(idx, fields, values, table):
     query = text(f"""set DateStyle='ISO, DMY';
         UPDATE {table}
         SET {", ".join([f"{field} = {format_value(value)}" for field, value in zip(fields, values)])}
-        WHERE id = {idx};""")
-    connect(query)
+        WHERE id = {idx}
+        RETURNING *;""")
+    return connect(query)
 
 
 def insert_into_table(fields, values, table):
