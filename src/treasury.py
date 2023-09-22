@@ -25,12 +25,12 @@ logger = logging.getLogger("treasury")
 
 def treasury(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} entro en el comando tesoreria")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entro en el comando asistencia")
     if update.message:
         update.message.delete()
     else:
         update.callback_query.delete_message()
-    text = f"<b>Tesoreria</b>\n{update.effective_user.first_name}: ¿Qué quieres hacer?\n"
+    text = f"<b>Tesoreria</b>\n¿Qué quieres hacer?\n"
     keyboard = [
         # [InlineKeyboardButton("Meter dinero en el bote", callback_data="+")],
         # [InlineKeyboardButton("Sacar dinero del bote", callback_data="-")],
@@ -46,7 +46,7 @@ def treasury(update: Update, context: CallbackContext):
 
 
 def expenses_state(update: Update, context: CallbackContext):
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} accedio al apartado gastos")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} accedio al apartado gastos")
 
     all_expenses = db.select("expenses").sort_values(by=["paid", "id"], ascending=True, ignore_index=True)
     context.user_data["all_expenses"] = all_expenses
@@ -91,7 +91,7 @@ def delete_expense(update: Update, context: CallbackContext):
 def delete_expense2(update: Update, context: CallbackContext):
     id_expense = int(update.callback_query.data.replace("DELETE", ""))
     expense = db.delete("expenses", id_expense).iloc[0]
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha eliminado el gasto '{expense}'")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha eliminado el gasto '{expense.to_list()}'")
     client_drive.delete_file(expense.id_file)
     expenses_state(update, context)
     update_drive_expenses()
@@ -146,7 +146,7 @@ def edit_price2(update: Update, context: CallbackContext):
 
     except ValueError:
         context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id,
-                                                                  f"{update.effective_user.first_name}: La cantidad introducida no es valida, pruebe de nuevo")
+                                                                  f"La cantidad introducida no es valida, pruebe de nuevo")
         return EDIT_PRICE
 
 
@@ -198,35 +198,31 @@ def bote_state(update: Update, context: CallbackContext):
     context.user_data["expense_type"] = update.callback_query.data
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    context.user_data["oldMessage"] = update.callback_query.edit_message_text(f"{update.effective_user.first_name}: ¿Cuánto dinero?", reply_markup=keyboard)
+    context.user_data["oldMessage"] = update.callback_query.edit_message_text(f"¿Cuánto dinero ha sido?", reply_markup=keyboard)
 
     return POT
 
 
 def bote2(update: Update, context: CallbackContext):
-    logger.warning(f"{update.effective_chat.type} -> "
-                   f"{update.effective_user.first_name} ha enviado la cantidad {update.message.text}")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha enviado la cantidad {update.message.text}")
     context.user_data["price"] = re.sub('[^\\d.]', '', update.message.text.replace(",", "."))
     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
     try:
         float(context.user_data["price"])
-        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id, f"{update.effective_user.first_name}: ¿Cúal es el motivo?",
-                                                                  reply_markup=keyboard)
+        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id, f"¿Cúal es el motivo del gasto?", reply_markup=keyboard)
         return POT2
 
     except ValueError:
-        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id,
-                                                                  f"{update.effective_user.first_name}: La cantidad introducida no es valida, pruebe de nuevo",
+        context.user_data["oldMessage"] = context.bot.sendMessage(update.effective_chat.id, f"La cantidad introducida no es valida, pruebe de nuevo",
                                                                   reply_markup=keyboard)
 
         return POT
 
 
 def bote3(update: Update, context: CallbackContext):
-    logger.warning(
-        f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado el motivo {update.message.text}")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha enviado el motivo {update.message.text}")
 
     context.user_data["motivo"] = update.message.text
     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
@@ -234,8 +230,7 @@ def bote3(update: Update, context: CallbackContext):
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
     context.user_data["oldMessage"] = context.bot.sendMessage(
-        update.effective_chat.id,
-        f"{update.effective_user.first_name}: Necesito que me envies una foto o documento del ticket, si no tienes pues enviame un selfie haciendo el idiota",
+        update.effective_chat.id, f" Necesito que me envies una foto o documento del ticket, si no tienes pues enviame un selfie haciendo el idiota",
         reply_markup=keyboard)
 
     return POT3
@@ -248,7 +243,7 @@ def bote4(update: Update, context: CallbackContext):
     persona = data[data.id == update.effective_user.id].squeeze()
     context.bot.deleteMessage(update.effective_chat.id, context.user_data["oldMessage"].message_id)
     context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha enviado una foto")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha enviado una foto")
     if context.user_data["expense_type"] == "EXPENSE":
         cantidad = float(context.user_data["price"])
         if update.message.photo:
@@ -257,15 +252,16 @@ def bote4(update: Update, context: CallbackContext):
         else:
             photo = False
             data_ticket, ext_ticket = download_file_telegram(context, update.message.document.file_id)
-        id_expense = db.insert_expense(persona.id,
-                                       motivo,
-                                       cantidad,
-                                       datetime.today().strftime('%d/%m/%Y'),
-                                       photo)
-        file_name = f"{id_expense}_{persona.nombre} {persona.apellidos}{ext_ticket}"
+        inserted_expense = db.insert_expense(persona.id,
+                                             motivo,
+                                             cantidad,
+                                             datetime.today().strftime('%d/%m/%Y'),
+                                             photo)
+        expense_id = inserted_expense.id
+        file_name = f"{expense_id}_{persona.nombre} {persona.apellidos}{ext_ticket}"
 
         id_file = client_drive.upload_file(data=data_ticket, file_name=file_name, parent_id=client_drive.FOLDER_EXPENSES)
-        db.update_expense_file(id_expense, id_file)
+        db.update_expense_file(expense_id, id_file)
         treasurer_message = f"{persona.apodo} ha gastado {cantidad}€ en '{motivo}'"
         user_message = f"Has metido el gasto de {cantidad}€ con el concepto '{motivo}'"
         filename, file = client_drive.get_file_by_id(id_file)
@@ -377,9 +373,9 @@ def end_pay(update: Update, context: CallbackContext):
     return FINAL_OPTION
 
 
-def end(update: Update, _: CallbackContext):
+def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} ha salido de tesoreria")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
     return ConversationHandler.END
 
 

@@ -3,7 +3,6 @@ from decouple import config
 
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.error import BadRequest, Unauthorized
 import src.utilitys as ut
 from utils import database as db
 
@@ -19,6 +18,9 @@ SELECT_POLL = 0
 
 def polls_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
+    if update.effective_chat.id == ID_MANITOBA:
+        context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /encuestas")
+        return
     polls = db.select("encuestas")
     polls = polls[~polls.end].reset_index()
     chat_id = update.effective_chat.id
@@ -150,7 +152,7 @@ def democracy(update: Update, context: CallbackContext) -> None:
             except Exception as error:
                 logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot -> {error}")
 
-    context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text1)
+    context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML", text=text1)
 
 
 def bot_activated(update: Update, context: CallbackContext) -> None:
@@ -171,8 +173,9 @@ def bot_activated(update: Update, context: CallbackContext) -> None:
             logger.warning(f"{person.apodo} con id {person.id} NO tiene activado el bot -> {error}")
 
 
-def end(update: Update, _: CallbackContext):
+def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
 
     return ConversationHandler.END
 

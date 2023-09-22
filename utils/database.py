@@ -161,7 +161,7 @@ def insert_expense(id_expense, concept, price, date, photo):
     INSERT INTO expenses    
     (id_person, concept, paid, price, date, photo)
          VALUES ({id_expense}, '{concept}',FALSE, {price}, '{date}', {photo})
-    RETURNING id;""")
+    RETURNING *;""")
 
     return connect(query)
 
@@ -218,8 +218,11 @@ def end_poll(idx):
 def connect(query):
     try:
         result = connection.execute(query)
-        if result.returns_rows and result.rowcount > 0:
-            df = pd.DataFrame(result.fetchall())
+        if result.returns_rows:
+            if result.rowcount == 1:
+                df = pd.Series(result.fetchall()[0], index=result.keys())
+            else:
+                df = pd.DataFrame(result.fetchall(), columns=list(result.keys()))
         else:
             df = None
         connection.commit()

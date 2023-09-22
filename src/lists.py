@@ -1,12 +1,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
 
-from telegram.error import BadRequest
 import pandas as pd
 import src.utilitys as ut
 import logging
 import re
-import unicodedata
 from datetime import datetime
 from utils import database as db
 from decouple import config
@@ -18,13 +16,16 @@ logger = logging.getLogger("lists")
 
 def lists_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
-    all_lists = db.select("lists")
-    context.user_data["all_lists"] = all_lists
     if update.message is not None:
         id_message = update.message.message_id
     else:
         id_message = update.callback_query.message.message_id
+    if update.effective_chat.id == ID_MANITOBA:
+        context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /listas")
+        return
 
+    all_lists = db.select("lists")
+    context.user_data["all_lists"] = all_lists
     chat_id = update.effective_chat.id
 
     logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entró en el comando listas")
@@ -180,8 +181,9 @@ def delete_list2(update: Update, context: CallbackContext):
     return CHOOSE_LIST
 
 
-def end(update: Update, _: CallbackContext):
+def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
 
     return ConversationHandler.END
 
