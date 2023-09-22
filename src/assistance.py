@@ -4,7 +4,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 from decouple import config
 from datetime import datetime
 from utils import sheets_drive
-import logging
+from utils import logger_config
 import utils.gillweb
 import src.utilitys as ut
 import utils.database as db
@@ -13,7 +13,7 @@ import utils.database as db
 ASSISTANCE, SELECT_SECTION, SELECT_NAME, SELECT_PERSON, SELECT_PERSON2, EDIT_ASSISTANCE, DELETE_ASSISTANCE, FINAL_OPTION = range(8)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logging.getLogger("tareas")
+logger = logger_config.logger
 download_thread = None
 
 
@@ -186,7 +186,7 @@ def end(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def get_conv_handler_assistance():
+def get_conv_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('asistencia', assistance_state)],
         states={

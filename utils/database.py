@@ -1,4 +1,4 @@
-import logging
+from utils import logger_config 
 import pandas as pd
 import json
 
@@ -11,7 +11,7 @@ DATABASE = config("DATABASE")
 PASSWORD_DB = config("PASSWORD_DB")
 engine = create_engine(f'postgresql://{USER_DB}:{PASSWORD_DB}@{HOST}/{DATABASE}')
 connection = engine.connect()
-logger = logging.getLogger("database")
+logger = logger_config.logger
 
 
 def select(table):
@@ -230,4 +230,3 @@ def connect(query):
     except Exception as e:
         logger.error(f"Error: {e}")
         return None
-

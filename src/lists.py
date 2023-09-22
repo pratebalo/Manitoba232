@@ -3,15 +3,15 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 
 import pandas as pd
 import src.utilitys as ut
-import logging
 import re
 from datetime import datetime
 from utils import database as db
 from decouple import config
+from utils import logger_config
 
 CHOOSE_LIST, CREATE_LIST, CREATE_LIST2, CREATE_LIST3, DELETE_LIST, FINAL_OPTION = range(6)
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logging.getLogger("lists")
+logger = logger_config.logger
 
 
 def lists_state(update: Update, context: CallbackContext):
@@ -225,7 +225,7 @@ def edit_list_manual(update: Update, context: CallbackContext):
     db.update_list(my_list)
 
 
-def get_conv_handler_lists():
+def get_conv_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('listas', lists_state)],
         states={

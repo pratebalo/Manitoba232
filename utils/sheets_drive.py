@@ -2,7 +2,7 @@ import os.path
 import random
 import utils.gillweb as gillweb
 from decouple import config
-import logging
+from utils import logger_config 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -23,10 +23,8 @@ SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/a
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("sheets_drive")
+
+logger = logger_config.logger
 if os.path.exists(ROOT_DIR + '/token.json'):
     creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)
@@ -51,10 +49,9 @@ ID_SHEET_TROPA = config('ID_SHEET_TROPA')
 ID_SHEET_ESCULTAS = config('ID_SHEET_ESCULTAS')
 ID_SHEET_ROVER = config('ID_SHEET_ROVER')
 
-sheet_sections = {
-    1: ID_SHEET_CASTORES, 2: ID_SHEET_MANADA, 3: ID_SHEET_TROPA, 4: ID_SHEET_ESCULTAS, 5: ID_SHEET_ROVER
+sheet_sections = {1: ID_SHEET_CASTORES, 2: ID_SHEET_MANADA, 3: ID_SHEET_TROPA, 4: ID_SHEET_ESCULTAS, 5: ID_SHEET_ROVER}
 
-}
+ID_SHEET_LISTADOS = config('ID_SHEET_LISTADOS')
 
 
 def create_sheet(sheet_name, folder_id):
@@ -178,7 +175,7 @@ def rename_file(file_id, new_name):
 
 def generate_sheet_sections():
     list_sections = gillweb.get_listed_sections()
-    sheet_id = '1uPKEj1s7Y4TPcyTImGrkmjl4POGM6Mryk3Ebn8L8lxM'
+    sheet_id = ID_SHEET_LISTADOS
     sheet = get_sheet(sheet_id)
     new_name = f'Listados-{datetime.now().strftime("%d/%m/%y %H:%M")}'
     rename_file(sheet_id, new_name)

@@ -77,7 +77,8 @@ def download_data_gillweb(section: int = None):
             url = "https://www.gillweb.es/core/api.php?controller=user&action=login"
             token = requests.post(url, data={"login": user, "password": password}, timeout=1).json()["data"]
 
-            url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
+            url = f"https://www.gillweb.es/core/api.php?controller=user&action=exportCSV" \
+                  f"&filter%5B0%5D%5B%5D=active&filter%5B0%5D%5B%5D=%3D&filter%5B0%5D%5B%5D=1&token={token}"
 
             if section:
                 url += f"&filter%5B1%5D%5B%5D=scout_subsection.scout_section&filter%5B1%5D%5B%5D=%3D&filter%5B1%5D%5B%5D={section}"

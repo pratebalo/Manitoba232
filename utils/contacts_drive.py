@@ -1,6 +1,6 @@
 import pandas as pd
 import os.path
-import logging
+from utils import logger_config 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -15,10 +15,8 @@ SERVICE_ACCOUNT_FILE = 'keys.json'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("contacts_drive")
+
+logger = logger_config.logger
 if os.path.exists(ROOT_DIR + '/token.json'):
     creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)

@@ -1,11 +1,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
 
-import logging
 import src.utilitys as ut
 from utils import database as db
 from decouple import config
-
+from utils import logger_config
 from datetime import date, datetime
 from telegram_bot_calendar import DetailedTelegramCalendar, YEAR
 
@@ -13,7 +12,7 @@ from telegram_bot_calendar import DetailedTelegramCalendar, YEAR
 SELECT_NAME, SELECT_SURNAME, SELECT_NICK, SELECT_GENDER, SELECT_DATE, SELECT_DATE2, FINAL_OPTION = range(7)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logging.getLogger("new_member")
+logger = logger_config.logger
 
 your_translation_months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre",
                            "Octubre", "Noviembre", "Diciembre"]
@@ -136,7 +135,7 @@ def new_member(update: Update, context: CallbackContext):
     db.insert_data(member.id, member.first_name)
 
 
-def left_member(update: Update, context: CallbackContext):
+def left_member(update: Update, _: CallbackContext):
     member = update.message.left_chat_member
     db.delete("data", member.id)
 

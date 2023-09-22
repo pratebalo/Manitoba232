@@ -1,4 +1,4 @@
-import logging
+from utils import logger_config 
 import re
 import requests
 import os
@@ -20,7 +20,7 @@ ID_MANITOBA = int(config("ID_MANITOBA"))
 ID_TESORERIA = int(config("ID_TESORERIA"))
 ID_ADMIN = int(config("ID_ADMIN"))
 ID_SHEET_EXPENSES = config("ID_SHEET_EXPENSES")
-logger = logging.getLogger("treasury")
+logger = logger_config.logger
 
 
 def treasury(update: Update, context: CallbackContext):
@@ -454,7 +454,7 @@ def update_drive_expenses():
     append_data(sheet, 'Historial', 'B3', result.values.tolist())
 
 
-def get_conv_handler_treasury():
+def get_conv_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('tesoreria', treasury)],
         states={

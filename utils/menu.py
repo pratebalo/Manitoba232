@@ -1,9 +1,9 @@
 from utils.sheets_drive import spreadsheets, get_sheet, append_data, clear_sheet
 import warnings
-import logging
+from utils import logger_config 
 import pandas as pd
 import src.utilitys as ut
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 
 from decouple import config
@@ -11,11 +11,8 @@ from decouple import config
 MENU1, MENU2, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, ELIMINAR_LISTA, FINAL_OPTION = range(9)
 warnings.filterwarnings("ignore")
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("menu")
-logging.getLogger('apscheduler').propagate = False
+
+logger = logger_config.logger
 
 ID_ACAMPADA = config("ID_ACAMPADA")
 ID_TESORERIA = config("ID_TESORERIA")
@@ -412,11 +409,11 @@ def update_all(update: Update, context: CallbackContext):
     context.bot.sendMessage(chat_id, text=f'https://docs.google.com/spreadsheets/d/{ID_ACAMPADA}')
 
 
-def modificar_cantidades(update: Update, context: CallbackContext):
+def modificar_cantidades(_: Update, _2: CallbackContext):
     print()
 
 
-def menu(update: Update, context: CallbackContext):
+def menu_state(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     user = update.effective_user
 
@@ -456,7 +453,7 @@ def elegir_menu(update: Update, context: CallbackContext):
     return MENU2
 
 
-def terminar(update: Update, context: CallbackContext):
+def terminar(update: Update, _: CallbackContext):
     update.callback_query.delete_message()
 
     return ConversationHandler.END
@@ -464,7 +461,7 @@ def terminar(update: Update, context: CallbackContext):
 
 def get_conv_handler_menu():
     conv_handler_menu = ConversationHandler(
-        entry_points=[CommandHandler('menu', menu)],
+        entry_points=[CommandHandler('menu', menu_state)],
         states={
             MENU1: [
                 CallbackQueryHandler(elegir_menu, pattern='.*'),
@@ -475,7 +472,7 @@ def get_conv_handler_menu():
                 CallbackQueryHandler(terminar, pattern='^TERMINAR$')
             ]
         },
-        fallbacks=[CommandHandler('menu', menu)],
+        fallbacks=[CommandHandler('menu', menu_state)],
     )
     return conv_handler_menu
 

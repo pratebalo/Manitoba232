@@ -143,7 +143,7 @@ def set_birthday5(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def get_conv_handler_birthday():
+def get_conv_handler():
     conv_handler_birthday = ConversationHandler(
         entry_points=[CommandHandler('setcumple', set_birthday)],
         states={

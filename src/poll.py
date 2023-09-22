@@ -1,4 +1,4 @@
-import logging
+from utils import logger_config 
 from decouple import config
 
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
@@ -8,10 +8,7 @@ from utils import database as db
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
-logger = logging.getLogger("poll")
+logger = logger_config.logger
 
 SELECT_POLL = 0
 

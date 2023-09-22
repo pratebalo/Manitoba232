@@ -1,4 +1,4 @@
-import logging
+from utils import logger_config 
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -43,10 +43,7 @@ if not creds or not creds.valid:
 
 drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("client_drive")
+logger = logger_config.logger
 
 
 def get_sheets_by_id(file_id, mime_type):
@@ -93,7 +90,8 @@ def get_file(file):
             status, done = downloader.next_chunk()
             print("Download %d%%." % int(status.progress() * 100))
 
-    except:
+    except Exception as e:
+        logger.error(f"Algo ha fallado {e}")
         request = drive_service.files().export_media(fileId=file.id, mimeType=file.mimeType)
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fd=fh, request=request)

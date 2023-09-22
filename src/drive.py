@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
-import logging
+from utils import logger_config
 import src.utilitys as ut
 from decouple import config
 from utils import client_drive
@@ -9,7 +9,7 @@ from utils import client_drive
 DRIVE1, DRIVE2, DRIVE3 = range(3)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logging.getLogger("drive")
+logger = logger_config.logger
 
 FOLDER_BASE = config("FOLDER_BASE")
 
@@ -105,6 +105,7 @@ def drive_download(update: Update, context: CallbackContext):
 
 def end_drive(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando drive")
 
     return ConversationHandler.END
 
