@@ -396,7 +396,7 @@ def check_iban(iban):
         return False, error
 
     iban_digits = iban[4:] + iban[:4]
-    iban_digits = ''.join(str(ord(digito) - ord('A') + 10) if 'A' <= digito <= 'Z' else digito for digito in iban_digits)
+    iban_digits = ''.join(str(ord(digit) - ord('A') + 10) if 'A' <= digit <= 'Z' else digit for digit in iban_digits)
 
     rest = int(iban_digits) % 97
 
