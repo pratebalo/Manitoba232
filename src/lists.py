@@ -16,17 +16,19 @@ logger = logger_config.logger
 
 def lists_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
+    chat_id = update.effective_chat.id
+
     if update.message is not None:
         id_message = update.message.message_id
     else:
         id_message = update.callback_query.message.message_id
+
+    context.bot.deleteMessage(chat_id, id_message)
     if update.effective_chat.id == ID_MANITOBA:
         context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /listas")
         return
-
     all_lists = db.select("lists")
     context.user_data["all_lists"] = all_lists
-    chat_id = update.effective_chat.id
 
     logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entró en el comando listas")
 
@@ -45,7 +47,6 @@ def lists_state(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
-    context.bot.deleteMessage(chat_id, id_message)
     return CHOOSE_LIST
 
 

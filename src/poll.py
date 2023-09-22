@@ -1,4 +1,4 @@
-from utils import logger_config 
+from utils import logger_config
 from decouple import config
 
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
@@ -15,12 +15,14 @@ SELECT_POLL = 0
 
 def polls_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
+    chat_id = update.effective_chat.id
+    if update.message:
+        context.bot.deleteMessage(chat_id, update.message.message_id)
     if update.effective_chat.id == ID_MANITOBA:
         context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /encuestas")
         return
     polls = db.select("encuestas")
     polls = polls[~polls.end].reset_index()
-    chat_id = update.effective_chat.id
 
     logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entró en el comando encuestas")
 
@@ -41,8 +43,6 @@ def polls_state(update: Update, context: CallbackContext):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("END"))])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    if update.message:
-        context.bot.deleteMessage(chat_id, update.message.message_id)
     context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
     return SELECT_POLL
 
@@ -153,7 +153,6 @@ def democracy(update: Update, context: CallbackContext) -> None:
 
 
 def bot_activated(update: Update, context: CallbackContext) -> None:
-
     ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando bot_activado")
     data = db.select("data")
