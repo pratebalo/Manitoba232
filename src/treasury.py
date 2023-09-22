@@ -375,7 +375,7 @@ def end_pay(update: Update, context: CallbackContext):
 
 def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando tesoreria")
     return ConversationHandler.END
 
 

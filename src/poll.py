@@ -172,7 +172,7 @@ def bot_activated(update: Update, context: CallbackContext) -> None:
 
 def end(update: Update, context: CallbackContext):
     update.callback_query.delete_message()
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando asistencia")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando encuestas")
 
     return ConversationHandler.END
 
