@@ -6,10 +6,6 @@ logger.setLevel(logging.DEBUG)
 logging.getLogger('apscheduler').propagate = False
 logging.getLogger('telegram.vendor.ptb_urllib3').propagate = False
 
-normal_log_handler = logging.FileHandler('normal.log')
-normal_log_handler.setLevel(logging.INFO)  # Puedes ajustar el nivel según tus necesidades
-normal_log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-normal_log_handler.setFormatter(normal_log_format)
 
 warning_log_handler = logging.FileHandler('normal.log')
 warning_log_handler.setLevel(logging.WARNING)  # Este manejará registros de advertencia
@@ -21,6 +17,5 @@ error_log_handler.setLevel(logging.ERROR)  # Este solo manejará registros de er
 error_log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 error_log_handler.setFormatter(error_log_format)
 
-logger.addHandler(normal_log_handler)
 logger.addHandler(error_log_handler)
 logger.addHandler(warning_log_handler)
