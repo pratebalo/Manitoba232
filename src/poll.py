@@ -210,7 +210,7 @@ def delete_poll(update: Update, context: CallbackContext):
     try:
         context.bot.deleteMessage(chat, message_id)
     except Exception as error:
-        logger.error(f"No se puede eliminar el mensaje -> {error}")
+        logger.error(f"No se puede eliminar el mensaje de la encuesta-> {error}")
     polls_state(update, context)
 
 

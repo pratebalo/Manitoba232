@@ -42,8 +42,9 @@ def echo(update: Update, context: CallbackContext):
     message = update.message
     chat = update.effective_chat.type
     if message:
-        if message.text and "la lista:\n" in message.text:
-            lists.edit_list_manual(update, context)
+        if message.text:
+            if "la lista:\n" in message.text:
+                lists.edit_list_manual(update, context)
 
         elif message.sticker:
             user.sticker += 1
