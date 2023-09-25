@@ -139,7 +139,6 @@ if __name__ == "__main__":
         logger.info(f"Iniciando el bot")
         logger.error(f"Fallo al eliminar el mensaje")
         logger.warning(f"Fallo al eliminar el mensaje")
-        x = int("a")
         updater.start_polling()
         updater.idle()
     except Exception as e:
