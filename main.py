@@ -137,7 +137,9 @@ if __name__ == "__main__":
         # job.run_daily(muted, time(17, 54, 00, 000000))
         job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
         logger.info(f"Iniciando el bot")
-
+        logger.error(f"Fallo al eliminar el mensaje")
+        logger.warning(f"Fallo al eliminar el mensaje")
+        x = int("a")
         updater.start_polling()
         updater.idle()
     except Exception as e:
