@@ -44,8 +44,3 @@ logger = logging.getLogger()
 # Agrega los manejadores al registro
 logger.addHandler(info_warning_handler)
 logger.addHandler(error_handler)
-
-# Ejemplos de registros
-logger.info("Este es un mensaje de nivel INFO (info_warning.log)")
-logger.warning("Este es un mensaje de nivel WARNING (info_warning.log)")
-logger.error("Este es un mensaje de nivel ERROR (error.log)")
