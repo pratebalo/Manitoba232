@@ -1,6 +1,6 @@
-python-telegram-bot==13.15
+python-telegram-bot
 gTTS
-Pillow
+Pillow==9.5
 pandas
 numpy
 python-dotenv

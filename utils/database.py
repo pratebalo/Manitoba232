@@ -1,5 +1,6 @@
-from utils import logger_config 
+from utils.logger_config import logger
 import pandas as pd
+import numpy as np
 import json
 
 from decouple import config
@@ -11,7 +12,6 @@ DATABASE = config("DATABASE")
 PASSWORD_DB = config("PASSWORD_DB")
 engine = create_engine(f'postgresql://{USER_DB}:{PASSWORD_DB}@{HOST}/{DATABASE}')
 connection = engine.connect()
-logger = logger_config.logger
 
 
 def select(table):
@@ -38,28 +38,11 @@ def insert_data(idx, name):
     connect(query)
 
 
-def update_data_messages(data):
-    query = text(f"""set DateStyle='ISO, DMY';
-        UPDATE data
-        SET ultimo_mensaje='{data.ultimo_mensaje}', total_mensajes={data.total_mensajes},
-        ronda_mensajes={data.ronda_mensajes}, sticker={data.sticker}, gif={data.gif}
-        WHERE id={data.id};""")
-    connect(query)
-
-
-def update_data_start(idx, name, surname, nick, gender, birth, birth_year):
-    query = text(f"""set DateStyle='ISO, DMY';
-        UPDATE data
-        SET nombre='{name}', apellidos='{surname}', apodo='{nick}', genero='{gender}', cumple='{birth}', cumple_ano={birth_year}
-        WHERE id={idx};""")
-    connect(query)
-
-
 def format_value(val):
     match val:
         case str():
             return "'{}'".format(val)
-        case int() | float():
+        case int() | float() | np.int64():
             return str(val)
         case bool():
             return 'TRUE' if val else 'FALSE'
@@ -71,10 +54,10 @@ def format_value(val):
             raise ValueError("Tipo de dato no soportado: {}".format(type(val)))
 
 
-def update_field_table(idx, fields, values, table):
+def update_fields_table(table, idx, **fields):
     query = text(f"""set DateStyle='ISO, DMY';
         UPDATE {table}
-        SET {", ".join([f"{field} = {format_value(value)}" for field, value in zip(fields, values)])}
+        SET {", ".join([f"{field} = {format_value(value)}" for field, value in fields.items()])}
         WHERE id = {idx}
         RETURNING *;""")
     return connect(query)
@@ -100,14 +83,6 @@ def update_bot_activated_all():
     query = text(f"""set DateStyle='ISO, DMY';
         UPDATE data
         SET activado=True;""")
-    connect(query)
-
-
-def update_bot_not_activated(idx):
-    query = text(f"""set DateStyle='ISO, DMY';
-        UPDATE data
-        SET activado=False
-        WHERE id={idx};""")
     connect(query)
 
 
@@ -166,22 +141,6 @@ def insert_expense(id_expense, concept, price, date, photo):
     return connect(query)
 
 
-def update_expense_paid(id_expense):
-    query = text(f"""
-        UPDATE expenses
-        SET paid = True
-        WHERE id = {id_expense};""")
-    connect(query)
-
-
-def update_expense_file(id_expense, id_file):
-    query = text(f"""
-        UPDATE expenses
-        SET id_file = '{id_file}'
-        WHERE id = {id_expense};""")
-    connect(query)
-
-
 def update_birth(id_person, song, language, sticker):
     query = text(f"""
         UPDATE data
@@ -190,11 +149,11 @@ def update_birth(id_person, song, language, sticker):
     connect(query)
 
 
-def insert_poll(id_poll, question, options, votes, url, chat_id, message_id):
+def insert_poll(id_poll, question, options, votes, url, message_id):
     query = text(f"""set DateStyle='ISO, DMY';
     INSERT INTO encuestas    
-    (id, question, options, votes, url,chat_id,message_id)
-         VALUES ({id_poll}, '{question}', ARRAY{options},ARRAY{votes}::integer[], '{url}',{chat_id},{message_id})
+    (id, question, options, votes, url,message_id)
+         VALUES ({id_poll}, '{question}', ARRAY{options},ARRAY{votes}::integer[], '{url}',{message_id})
     RETURNING *;""")
     return connect(query)
 
@@ -203,14 +162,6 @@ def update_poll(idx, votes, message_id, last_vote):
     query = text(f"""
         UPDATE encuestas
         SET votes = ARRAY{votes}::bigint[], message_id={message_id}, last_vote='{json.dumps(last_vote)}'
-        WHERE id = {idx};""")
-    connect(query)
-
-
-def end_poll(idx):
-    query = text(f"""
-        UPDATE encuestas
-        SET "end" = true
         WHERE id = {idx};""")
     connect(query)
 
