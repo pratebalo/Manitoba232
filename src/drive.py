@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes
 from utils import logger_config
 import src.utilitys as ut
 from decouple import config
@@ -14,12 +14,11 @@ logger = logger_config.logger
 FOLDER_BASE = config("FOLDER_BASE")
 
 
-def drive(update: Update, context: CallbackContext):
+async def drive(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     ut.set_actual_user(update.effective_user.id, context)
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} entró en el comando drive")
+    logger.warning(f"{update.effective_user.first_name} entró en el comando drive")
 
-    chat_id = update.effective_chat.id
     files = client_drive.get_all_files_description(FOLDER_BASE)
     files.mimeType = files.mimeType.str.replace('application/', "").str.replace('vnd.google-apps.', "").str.replace('vnd.openxmlformats-officedocument.', "")
     keyboard = []
@@ -48,17 +47,16 @@ def drive(update: Update, context: CallbackContext):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("TERMINAR"))])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.bot.sendMessage(chat_id, "Files", reply_markup=reply_markup)
+    await update.effective_chat.send_message("Files", reply_markup=reply_markup)
 
     return DRIVE1
 
 
-def drive2(update: Update, context: CallbackContext):
-    context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
-    chat_id = update.effective_chat.id
+async def drive2(update: Update, _: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
     file_id = update.callback_query.data.replace("ABRIR", "")
     files = client_drive.get_all_files_description(file_id)
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} selecciona la carpeta {file_id}")
+    logger.warning(f"{update.effective_user.first_name} selecciona la carpeta {file_id}")
     files.mimeType = files.mimeType.str.replace('application/', "").str.replace('vnd.google-apps.', "").str.replace('vnd.openxmlformats-officedocument.', "")
     keyboard = []
     for i, file in files.iterrows():
@@ -89,23 +87,23 @@ def drive2(update: Update, context: CallbackContext):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("TERMINAR"))])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.bot.sendMessage(chat_id, "Files", reply_markup=reply_markup)
+    await update.effective_chat.send_message("Files", reply_markup=reply_markup)
 
     return DRIVE2
 
 
-def drive_download(update: Update, context: CallbackContext):
+async def drive_download(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     file_id = update.callback_query.data.replace("DESCARGAR", "")
-    logger.warning(f"{update.effective_chat.type} -> {update.effective_user.first_name} descargo el archivo {file_id}")
+    logger.warning(f"{update.effective_user.first_name} descargo el archivo {file_id}")
     file = client_drive.get_file_description(file_id)
     doc = client_drive.get_file(file)
-    context.bot.sendDocument(chat_id=chat_id, document=doc, timeout=2000)
+    await context.bot.sendDocument(chat_id=chat_id, document=doc, timeout=2000)
 
 
-def end_drive(update: Update, context: CallbackContext):
-    update.callback_query.delete_message()
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando drive")
+async def end_drive(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
+    logger.warning(f"{context.user_data['user'].apodo} ha salido del comando drive")
 
     return ConversationHandler.END
 

@@ -1,12 +1,12 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes, MessageHandler, filters
 from utils import database as db
 from decouple import config
 from datetime import date
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY
 
 import pandas as pd
-from utils import logger_config 
+from utils import logger_config
 import random
 import src.utilitys as ut
 
@@ -37,7 +37,7 @@ class MyTranslationCalendar(DetailedTelegramCalendar):
     next_button = "⏩"
 
 
-def recordar_tareas(context: CallbackContext):
+async def recordar_tareas(context: ContextTypes.DEFAULT_TYPE):
     all_tareas = db.select("tareas")
     data = db.select("data")
     for _, tarea in all_tareas[~all_tareas.completada].iterrows():
@@ -51,19 +51,19 @@ def recordar_tareas(context: CallbackContext):
             text = f"Que era para mañanaaaaaaaa\n{tarea_to_text(tarea, data)}"
         if text:
             for persona in tarea.personas:
-                context.bot.sendMessage(chat_id=persona, parse_mode="HTML", text=text)
+                await context.bot.sendMessage(chat_id=persona, parse_mode="HTML", text=text)
 
 
-def tareas(update: Update, context: CallbackContext):
+async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ut.set_actual_user(update.effective_user.id, context)
     if update.message:
         context.user_data["ediciones"] = []
-        context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
+        await update.message.delete()
     else:
-        context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
+        await update.callback_query.delete_message()
     user = update.effective_user
     context.user_data["creador_tarea"] = user["id"]
-    logger.warning(f"{update.effective_chat.type} -> {user.first_name} entro en el comando tareas")
+    logger.warning(f"{user.first_name} entro en el comando tareas")
     all_tareas = db.select("tareas")
     data = db.select("data")
     context.user_data["data"] = data
@@ -89,13 +89,13 @@ def tareas(update: Update, context: CallbackContext):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data="END")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     # Send message with text and appended InlineKeyboard
-    context.bot.sendMessage(update.effective_chat.id, text, reply_markup=reply_markup)
+    await update.effective_chat.send_message(text, reply_markup=reply_markup)
     # Tell ConversationHandler that we're in state `FIRST` now
     context.user_data["personas_asignadas"] = []
     return ELEGIR_TAREA
 
 
-def ver_tarea(update: Update, context: CallbackContext):
+async def ver_tarea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     all_tareas = context.user_data["all_tareas"]
     data = context.user_data["data"]
     pos_tarea = int(update.callback_query.data.replace("VER", ""))
@@ -107,41 +107,40 @@ def ver_tarea(update: Update, context: CallbackContext):
     keyboard = [[InlineKeyboardButton("Continuar", callback_data=str("CONTINUAR")),
                  InlineKeyboardButton("Terminar", callback_data=str("END"))]]
 
-    update.callback_query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.callback_query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
     return FINAL_OPTION
 
 
-def crear_tarea(update: Update, context: CallbackContext):
-    context.user_data["oldMessage"] = update.callback_query.edit_message_text(parse_mode="HTML",
-                                                                              text="<b>Creando tarea</b>\nIntroduce la descripción")
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha seleccionado crear tarea")
+async def crear_tarea(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["oldMessage"] = await update.callback_query.edit_message_text(parse_mode="HTML", text="<b>Creando tarea</b>\nIntroduce la descripción")
+    logger.warning(f"{context.user_data['user'].apodo} ha seleccionado crear tarea")
     return CREAR_TAREA1
 
 
-def elegir_fecha(update: Update, context: CallbackContext):
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha introducido la descripcion: {update.message.text}")
+async def elegir_fecha(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.warning(f"{context.user_data['user'].apodo} ha introducido la descripcion: {update.message.text}")
     context.user_data["descripcion"] = update.message.text
-    context.bot.deleteMessage(update.message.chat_id, update.message.message_id)
-    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
+    await update.message.delete()
+    await context.user_data["oldMessage"].delete()
     calendar, step = MyTranslationCalendar().build()
-    context.bot.sendMessage(update.effective_chat.id, parse_mode=f"HTML", reply_markup=calendar,
-                            text=f"<b>Creando tarea</b>\nElige {PRUEBA[step]}")
+    await update.effective_chat.send_message(parse_mode=f"HTML", reply_markup=calendar,
+                                             text=f"<b>Creando tarea</b>\nElige {PRUEBA[step]}")
     return CREAR_TAREA2
 
 
-def elegir_fecha2(update: Update, context: CallbackContext):
+async def elegir_fecha2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result, key, step = MyTranslationCalendar().process(update.callback_query.data)
     if not result and key:
-        context.bot.edit_message_text(parse_mode="HTML", text=f"<b>Creando tarea</b>\nElige {PRUEBA[step]}",
-                                      chat_id=update.callback_query.message.chat_id,
-                                      message_id=update.callback_query.message.message_id,
-                                      reply_markup=key)
+        await context.bot.edit_message_text(parse_mode="HTML", text=f"<b>Creando tarea</b>\nElige {PRUEBA[step]}",
+                                            chat_id=update.callback_query.message.chat_id,
+                                            message_id=update.callback_query.message.message_id,
+                                            reply_markup=key)
     elif result:
-        context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
+        await update.callback_query.delete_message()
         result = result.strftime("%d/%m/%Y")
         context.user_data["fecha"] = result
 
-        logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha elegido la fecha {result}")
+        logger.warning(f"{context.user_data['user'].apodo} ha elegido la fecha {result}")
         keyboard = []
         part_keyboard = []
         data = context.user_data["data"]
@@ -152,13 +151,13 @@ def elegir_fecha2(update: Update, context: CallbackContext):
                 part_keyboard = []
 
         reply_markup = InlineKeyboardMarkup(keyboard)
-        context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", reply_markup=reply_markup,
-                                text="<b>Creando tarea</b>\n¿A qúe persona quieres asignarla?")
+        await update.effective_chat.send_message(parse_mode="HTML", reply_markup=reply_markup,
+                                                 text="<b>Creando tarea</b>\n¿A qúe persona quieres asignarla?")
 
         return CREAR_TAREA3
 
 
-def asignar_persona2(update: Update, context: CallbackContext):
+async def asignar_persona2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     context.user_data["personas_asignadas"].append(int(query.data))
     keyboard = []
@@ -173,14 +172,14 @@ def asignar_persona2(update: Update, context: CallbackContext):
     keyboard.append([InlineKeyboardButton("NO", callback_data="NO")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query.edit_message_text(parse_mode="HTML", reply_markup=reply_markup,
-                            text="<b>Creando tarea</b>\nPersona asignada. ¿Quieres asignarla a alguien más?")
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha asignado a {query.data} a la tarea")
+    await query.edit_message_text(parse_mode="HTML", reply_markup=reply_markup,
+                                  text="<b>Creando tarea</b>\nPersona asignada. ¿Quieres asignarla a alguien más?")
+    logger.warning(f"{context.user_data['user'].apodo} ha asignado a {query.data} a la tarea")
     return CREAR_TAREA4
 
 
-def end_creacion(update: Update, context: CallbackContext):
-    context.bot.deleteMessage(update.effective_chat.id, update.callback_query.message.message_id)
+async def end_creacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
     data = context.user_data["data"]
     tarea = pd.Series(
         {"descripcion": context.user_data["descripcion"], "personas": context.user_data["personas_asignadas"],
@@ -199,23 +198,23 @@ def end_creacion(update: Update, context: CallbackContext):
     personas = data[data.id.isin(tarea.personas)]
     for _, persona in personas.iterrows():
         try:
-            context.bot.sendMessage(persona.id, parse_mode="HTML",
-                                    text="Se te ha asignado la siguiente tarea:\n" + texto)
+            await context.bot.sendMessage(persona.id, parse_mode="HTML",
+                                          text="Se te ha asignado la siguiente tarea:\n" + texto)
         except:
-            context.bot.sendMessage(ID_MANITOBA, text=f"{persona.apodo} no me tiene activado")
-            context.bot.sendSticker(ID_MANITOBA, sticker=sticker[random.randint(0, len(sticker) - 1)])
-    logger.warning(f"{update.effective_chat.type} -> Se ha creado la tarea {tarea.descripcion}")
+            await context.bot.sendMessage(ID_MANITOBA, text=f"{persona.apodo} no me tiene activado")
+            await context.bot.sendSticker(ID_MANITOBA, sticker=sticker[random.randint(0, len(sticker) - 1)])
+    logger.warning(f"Se ha creado la tarea {tarea.descripcion}")
 
     keyboard = [[InlineKeyboardButton("Continuar", callback_data="CONTINUAR"),
                  InlineKeyboardButton("Terminar", callback_data="END")]]
 
-    context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=texto,
-                            reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.effective_chat.send_message(parse_mode="HTML", text=texto,
+                                             reply_markup=InlineKeyboardMarkup(keyboard))
     context.user_data["ediciones"].append("\n" + texto)
     return FINAL_OPTION
 
 
-def editar_tarea(update: Update, context: CallbackContext):
+async def editar_tarea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show new choice of buttons"""
     query = update.callback_query
 
@@ -227,12 +226,12 @@ def editar_tarea(update: Update, context: CallbackContext):
     keyboard = [[InlineKeyboardButton("Continuar", callback_data="CONTINUAR"),
                  InlineKeyboardButton("Terminar", callback_data="END")]]
 
-    update.callback_query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.callback_query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
     context.user_data["ediciones"].append("\n" + texto)
     return FINAL_OPTION
 
 
-def eliminar_tarea(update: Update, context: CallbackContext):
+async def eliminar_tarea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
 
     all_tareas = context.user_data["all_tareas"]
@@ -240,18 +239,18 @@ def eliminar_tarea(update: Update, context: CallbackContext):
     tarea = all_tareas.iloc[pos_tarea]
     db.delete("tareas", tarea.id)
     data = context.user_data["data"]
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo}  ha eliminado la tarea \n{tarea_to_text(tarea, data)}")
+    logger.warning(f"{context.user_data['user'].apodo}  ha eliminado la tarea \n{tarea_to_text(tarea, data)}")
     texto = f"{context.user_data['user'].apodo} ha eliminado la tarea \n<b>{tarea_to_text(tarea, data)}</b>"
 
     keyboard = [[InlineKeyboardButton("Continuar", callback_data=str("CONTINUAR")),
                  InlineKeyboardButton("Terminar", callback_data=str("END"))]]
 
-    query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(parse_mode="HTML", text=texto, reply_markup=InlineKeyboardMarkup(keyboard))
     context.user_data["ediciones"].append("\n" + texto)
     return FINAL_OPTION
 
 
-def completar_tarea(update: Update, context: CallbackContext):
+async def completar_tarea(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     all_tareas = context.user_data["all_tareas"]
     pos_tarea = int(query.data.replace("COMPLETAR", ""))
@@ -259,20 +258,20 @@ def completar_tarea(update: Update, context: CallbackContext):
     tarea.completada = True
     db.update_tarea(tarea)
     data = context.user_data["data"]
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo}  ha completado la tarea \n{tarea_to_text(tarea, data)}")
+    logger.warning(f"{context.user_data['user'].apodo}  ha completado la tarea \n{tarea_to_text(tarea, data)}")
     texto = f"<a href='tg://user?id={update.effective_user.id}'>{context.user_data['user'].apodo}</a> " \
             f"ha completado la tarea!!!!!! \n<b>{tarea_to_text(tarea, data)}</b>"
 
-    query.delete_message()
+    await query.delete_message()
     if context.user_data["ediciones"]:
-        context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML",
-                                text="\n".join(context.user_data["ediciones"]))
-    context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML", text=texto)
+        await context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML",
+                                      text="\n".join(context.user_data["ediciones"]))
+    await context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML", text=texto)
     stickers = ["CAACAgIAAxkBAAICXmAasBQ2GrCJTRmfjzDArpTLXfVtAAJJAQACVp29CnVtIjfXzilUHgQ",
                 "CAACAgIAAxkBAAICX2AasB6gnf_gqA3c8s00wW3AFj5QAAJNAANZu_wlKIGgbd0bgvceBA",
                 "CAACAgIAAxkBAAICYGAasCfRVfZcMOVWzZiuX2pFuZC7AAJXAAPBnGAMxgL9s1SbpjQeBA",
                 "CAACAgIAAxkBAAICYWAasDPbxJKIINhcFeiQsiYvVEGpAAJjAANOXNIpRcBzCXnlr_AeBA"]
-    context.bot.sendSticker(ID_MANITOBA, sticker=random.choice(stickers))
+    await context.bot.sendSticker(ID_MANITOBA, sticker=random.choice(stickers))
     return ConversationHandler.END
 
 
@@ -285,12 +284,12 @@ def tarea_to_text(tarea, data):
     return text
 
 
-def end(update: Update, context: CallbackContext):
-    update.callback_query.delete_message()
-    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido de tareas")
+async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
+    logger.warning(f"{context.user_data['user'].apodo} ha salido de tareas")
     if context.user_data["ediciones"]:
-        context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML",
-                                text="\n".join(context.user_data["ediciones"]))
+        await context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML",
+                                      text="\n".join(context.user_data["ediciones"]))
     return ConversationHandler.END
 
 
@@ -306,7 +305,7 @@ def get_conv_handler():
                 CallbackQueryHandler(completar_tarea, pattern='^COMPLETAR'),
                 CallbackQueryHandler(end, pattern='^END')
             ],
-            CREAR_TAREA1: [MessageHandler(Filters.text & ~Filters.command, elegir_fecha)],
+            CREAR_TAREA1: [MessageHandler(filters.TEXT & ~filters.COMMAND, elegir_fecha)],
             CREAR_TAREA2: [CallbackQueryHandler(elegir_fecha2)],
             CREAR_TAREA3: [CallbackQueryHandler(asignar_persona2)],
             CREAR_TAREA4: [CallbackQueryHandler(end_creacion, pattern='^NO$'),

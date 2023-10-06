@@ -3,7 +3,7 @@ import src.utilitys as ut
 
 from decouple import config
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes, MessageHandler, filters
 from gtts import gTTS
 
 LOQUENDO_1, LOQUENDO_2 = range(2)
@@ -12,18 +12,19 @@ ID_MANITOBA = int(config("ID_MANITOBA"))
 logger = logger_config.logger
 
 
-def loquendo(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
+async def loquendo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.delete()
+    if update.effective_chat.id == ID_MANITOBA:
+        await update.effective_user.send_message(text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /loquendo")
+        return ConversationHandler.END
     ut.set_actual_user(update.effective_user.id, context)
-    logger.warning(f"{update.effective_chat.type} -> User {context.user_data['user'].apodo} entro en el comando loquendo")
-
-    context.bot.deleteMessage(chat_id, update.message.message_id)
-    context.user_data["oldMessage"] = context.bot.sendMessage(chat_id, f"¿Qué texto quieres convertir?")
+    logger.warning(f"User {context.user_data['user'].apodo} entro en el comando loquendo")
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("CANCELAR", callback_data=f"CANCEL")]])
+    context.user_data["oldMessage"] = await update.effective_chat.send_message(f"¿Qué texto quieres convertir?", reply_markup=reply_markup)
     return LOQUENDO_1
 
 
-def loquendo2(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
+async def loquendo2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     idi = ['af', 'ar', 'bn', 'bs', 'ca', 'cs', 'cy', 'da', 'de', 'el', 'en', 'eo', 'es', 'et', 'fi', 'fr', 'gu',
            'hi', 'hr', 'hu', 'hy', 'id', 'is', 'it', 'ja', 'jw', 'km', 'kn', 'ko', 'la', 'lv', 'mk', 'ml', 'mr',
            'my', 'ne', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'si', 'sk', 'sq', 'sr', 'su', 'sv', 'sw', 'ta', 'te',
@@ -43,27 +44,33 @@ def loquendo2(update: Update, context: CallbackContext):
             keyboard.append(part_keyboard)
             part_keyboard = []
 
+    keyboard.append([InlineKeyboardButton("CANCELAR", callback_data=f"CANCEL")])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    logger.warning(f"{update.effective_chat.type} -> User {context.user_data['user'].apodo} mando el texto:\n {update.message.text}")
+    logger.warning(f"User {context.user_data['user'].apodo} mando el texto:\n {update.message.text}")
 
-    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
-    context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
-    context.user_data["oldMessage"] = context.bot.sendMessage(chat_id, text=f"¿Qué idioma quieres poner?", reply_markup=reply_markup)
+    await context.user_data["oldMessage"].delete()
+    await update.message.delete()
+    context.user_data["oldMessage"] = await update.effective_chat.send_message(text=f"¿Qué idioma quieres poner?", reply_markup=reply_markup)
     context.user_data["texto"] = update.message.text
 
     return LOQUENDO_2
 
 
-def end_loquendo(update: Update, context: CallbackContext):
-    chat_id = update.callback_query.message.chat_id
-    logger.warning(f"{update.effective_chat.type} -> User {context.user_data['user'].apodo} mando el idioma:\n {update.callback_query.data}")
+async def end_loquendo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.warning(f"User {context.user_data['user'].apodo} mando el idioma: {update.callback_query.data}")
 
-    context.bot.deleteMessage(chat_id, context.user_data["oldMessage"].message_id)
+    await context.user_data["oldMessage"].delete()
     tts = gTTS(context.user_data["texto"], lang=update.callback_query.data)
     file_name = "Mensajito de Baden Powell.mp3"
     tts.save(file_name)
-    context.bot.sendAudio(chat_id, timeout=60, audio=open(file_name, "rb"))
+    await update.effective_chat.send_audio(audio=open(file_name, "rb"))
 
+    return ConversationHandler.END
+
+
+async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.callback_query.delete_message()
+    logger.warning(f"{context.user_data['user'].apodo} ha salido del comando loquendo")
     return ConversationHandler.END
 
 
@@ -71,8 +78,10 @@ def get_conv_handler():
     return ConversationHandler(
         entry_points=[CommandHandler('loquendo', loquendo)],
         states={
-            LOQUENDO_1: [MessageHandler(Filters.text & ~Filters.command, loquendo2)],
-            LOQUENDO_2: [CallbackQueryHandler(end_loquendo)]
+            LOQUENDO_1: [MessageHandler(filters.TEXT & ~filters.COMMAND, loquendo2),
+                         CallbackQueryHandler(end, pattern='^CANCEL')],
+            LOQUENDO_2: [CallbackQueryHandler(end, pattern='^CANCEL$'),
+                         CallbackQueryHandler(end_loquendo)]
 
         },
         fallbacks=[CommandHandler('loquendo', loquendo)],
