@@ -21,6 +21,7 @@ ID_MANITOBA = int(config("ID_MANITOBA"))
 ID_SHEET_LISTADOS = config('ID_SHEET_LISTADOS')
 
 TOKEN = config("TOKEN")
+ID_ADMIN = config("ID_ADMIN")
 
 
 async def muted(context: ContextTypes.DEFAULT_TYPE):
@@ -140,4 +141,5 @@ if __name__ == "__main__":
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     except Exception as e:
-        print("Otro error:", e)
+        app.bot.sendMessage(ID_ADMIN, e)
+        logger.error("Otro error:", e)
