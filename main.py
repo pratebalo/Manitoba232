@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from utils import contacts_drive as contacts, menu, database as db
 from utils.sheets_drive import generate_sheet_sections
 from utils.logger_config import logger
-from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance, ass, pietro, loquendo
+from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance, ass, pietro, loquendo, utilitys
 
 warnings.filterwarnings("ignore")
 
@@ -138,6 +138,7 @@ if __name__ == "__main__":
     job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muted, time(17, 54, 00, 000000))
     job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
+    job.run_repeating(utilitys.check_logs, interval=5, first=1)
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     except Exception as e:

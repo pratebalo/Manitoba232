@@ -11,13 +11,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(m
 
 httpx_logger = logging.getLogger('httpx')
 httpx_logger.setLevel(logging.WARNING)
-# logging.getLogger('apscheduler').propagate = False
+logging.getLogger('apscheduler').propagate = False
 # logging.getLogger('telegram.vendor.ptb_urllib3').propagate = False
 
 
 # Crea dos manejadores de registro diferentes
 info_warning_handler = logging.FileHandler('info_warning.log')
-error_handler = logging.FileHandler('error.log')
+error_handler = logging.FileHandler('errors.log')
 
 
 # Crea un filtro personalizado para INFO y WARNING
