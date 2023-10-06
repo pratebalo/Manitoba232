@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ConversationHandler, MessageHandler, filters, CallbackQueryHandler, CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext, MessageHandler, Filters
 
 import pandas as pd
 import src.utilitys as ut
@@ -7,30 +7,33 @@ import re
 from datetime import datetime
 from utils import database as db
 from decouple import config
-from utils.logger_config import logger
+from utils import logger_config
 
 CHOOSE_LIST, CREATE_LIST, CREATE_LIST2, CREATE_LIST3, DELETE_LIST, FINAL_OPTION = range(6)
 ID_MANITOBA = int(config("ID_MANITOBA"))
+logger = logger_config.logger
 
 
-async def lists_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def lists_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
-    if update.effective_chat.id == ID_MANITOBA:
-        await update.message.delete()
-        logger.warning(f"{context.user_data['user'].apodo} entró en el comando listas desde Manitoba")
-        await update.effective_user.send_message(text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /listas")
-        return ConversationHandler.END
-    if update.message:
-        await update.message.delete()
-        logger.warning(f"{context.user_data['user'].apodo} entró en el comando listas")
+    chat_id = update.effective_chat.id
+
+    if update.message is not None:
+        id_message = update.message.message_id
     else:
-        await update.callback_query.delete_message()
-        logger.warning(f"{context.user_data['user'].apodo} ha vuelto al inicio de listas")
+        id_message = update.callback_query.message.message_id
+
+    context.bot.deleteMessage(chat_id, id_message)
+    if update.effective_chat.id == ID_MANITOBA:
+        context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /listas")
+        return
     all_lists = db.select("lists")
     context.user_data["all_lists"] = all_lists
 
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entró en el comando listas")
+
     keyboard = []
-    text = f"¿Qué quieres hacer?\n"
+    text = f"{context.user_data['user'].apodo} ¿Qué quieres hacer?\n"
 
     for i, my_list in all_lists.iterrows():
         keyboard_line = []
@@ -43,87 +46,92 @@ async def lists_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data="END")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.effective_chat.send_message(text, reply_markup=reply_markup)
+    context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
     return CHOOSE_LIST
 
 
-async def view_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def view_list(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     all_lists = context.user_data["all_lists"]
     id_list = int(update.callback_query.data.replace("VIEW", ""))
 
     my_list = all_lists[all_lists.id == id_list].iloc[0]
 
-    logger.warning(f"{context.user_data['user'].apodo} seleccionó ver la lista '{my_list.list_name}'")
+    logger.warning(
+        f"{update.effective_chat.type} -> {context.user_data['user'].apodo} seleccionó ver la lista '{my_list.list_name}'")
 
     text = f"{context.user_data['user'].apodo} ha solicitado ver la lista:\n{list_to_text(my_list)}"
-    new_message = await context.bot.send_message(update.effective_chat.id, parse_mode="HTML", text=text)
+    new_message = context.bot.sendMessage(update.effective_chat.id, parse_mode="HTML", text=text)
     if chat_id == ID_MANITOBA:
         try:
-            await context.bot.delete_message(ID_MANITOBA, int(my_list.message_id))
+            context.bot.deleteMessage(ID_MANITOBA, int(my_list.message_id))
         except Exception as error:
             logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
         my_list.message_id = new_message.message_id
         db.update_list(my_list)
-    await lists_state(update, context)
+    lists_state(update, context)
 
 
-async def create_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def create_list(update: Update, context: CallbackContext):
     query = update.callback_query
 
-    logger.warning(f"{context.user_data['user'].apodo} seleccionó crear lista")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} seleccionó crear lista")
 
-    await context.bot.delete_message(query.message.chat_id, query.message.message_id)
+    context.bot.deleteMessage(query.message.chat_id, query.message.message_id)
 
-    text = "Esto es una lista <b>numerada</b>:\n  1. Elemento1\n  2. Todo tiene un espaciado al principio y un numero\n  3. Y se actualizan los numeros " \
-           "automaticamente\n----------------------------\nEsto es una lista con <b>guiones</b>:\n  - Elemento1\n  - Igual que la numerada pero sin numeros" \
-           "\n----------------------------\nEsto es una lista <b>sin formato</b>:\nPuedes poner todo\n -como\n -quieras\n" \
-           "       y lo mantiene sin editar\n+tal como está\n----------------------------\n <b>Qué tipo de lista quieres crear?</b>"
+    text = "Esto es una lista numerada:\n  1. Elemento1\n  2. Todo tiene un espaciado al principio y un numero\n  3. Y se actualizan los numeros " \
+           "automaticamente\n----------------------------\nEsto es una lista con guiones:\n  - Elemento1\n  - Igual que la numerada pero sin numeros" \
+           "\n----------------------------\nEsto es una lista sin formato:\nPuedes poner todo\n -como\n -quieras\n" \
+           "       y lo mantiene sin editar\n+tal como está\n "
+    context.user_data["oldMessage"] = context.bot.sendMessage(query.message.chat_id, text=text)
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Numerada", callback_data="NUMBERED"),
-          InlineKeyboardButton("Con guiones", callback_data="NORMAL"),
+        [[InlineKeyboardButton("Lista numerada", callback_data="NUMBERED"), InlineKeyboardButton("Lista con guiones", callback_data="NORMAL"),
           InlineKeyboardButton("Sin formato", callback_data="UNFORMAT")],
          [InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    await context.bot.send_message(query.message.chat_id, parse_mode="HTML", reply_markup=keyboard, text=text)
+    context.bot.sendMessage(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
+                            text=f"{context.user_data['user'].apodo}: Qué tipo de lista quieres crear?")
 
     return CREATE_LIST
 
 
-async def create_list2(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def create_list2(update: Update, context: CallbackContext):
     query = update.callback_query
     context.user_data["type_list"] = update.callback_query.data
-    logger.warning(f"{context.user_data['user'].apodo} eligió el tipo {update.callback_query.data}")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} seleccionó {update.callback_query.message.text}")
 
-    await context.bot.delete_message(query.message.chat_id, query.message.message_id)
+    context.bot.deleteMessage(query.message.chat_id, query.message.message_id)
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    context.user_data["oldMessage"] = await context.bot.send_message(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
-                                                                     text=f"Escribe el nombre de la lista")
+    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
+    context.user_data["oldMessage"] = context.bot.sendMessage(query.message.chat_id, parse_mode="Markdown", reply_markup=keyboard,
+                                                              text=f"{context.user_data['user'].apodo}: Escribe el nombre de la lista")
     return CREATE_LIST2
 
 
-async def create_list3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def create_list3(update: Update, context: CallbackContext):
     message = update.message
     context.user_data["list_name"] = message.text
 
-    logger.warning(f"{context.user_data['user'].apodo} eligió el nombre {message.text}")
+    logger.warning(
+        f"{update.effective_chat.type} -> {context.user_data['user'].apodo} eligio el nombre {message.text}")
 
-    await context.bot.delete_message(message.chat_id, message.message_id)
-    await context.bot.delete_message(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
+    context.bot.deleteMessage(message.chat_id, message.message_id)
+    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
-    context.user_data["oldMessage"] = await context.bot.send_message(
+    context.user_data["oldMessage"] = context.bot.sendMessage(
         message.chat_id,
         parse_mode="Markdown",
         reply_markup=keyboard,
-        text=f"Escribe la lista en el siguiente formato:\n**Elemento1**\n**Elemento2** ")
+        text=f"{context.user_data['user'].apodo}: Escribe la lista en el siguiente formato:\n**Elemento1**\n**Elemento2** ")
 
     return CREATE_LIST3
 
 
-async def end_crete_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.warning(f"{context.user_data['user'].apodo} ha escrito\n{update.message.text}")
+def end_crete_list(update: Update, context: CallbackContext):
+    logger.warning(
+        f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha escrito {update.message.text}")
 
-    await context.bot.delete_message(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
+    context.bot.deleteMessage(context.user_data["oldMessage"].chat_id, context.user_data["oldMessage"].message_id)
 
     elements = []
     for idx, line in enumerate(update.message.text.splitlines()):
@@ -135,49 +143,48 @@ async def end_crete_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = f"""{context.user_data['user'].apodo} ha creado la lista:\n{list_to_text(new_list)}\n"""
 
-    logger.warning(f"{context.user_data['user'].apodo} ha creado la lista {context.user_data['list_name']}")
-    create_message = await context.bot.send_message(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
+    logger.warning(
+        f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha creado la lista {context.user_data['list_name']}")
+    create_message = context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
     new_list.message_id = create_message.message_id
     db.insert_list(new_list)
-    await lists_state(update, context)
+    lists_state(update, context)
     return CHOOSE_LIST
 
 
-async def delete_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def delete_list(update: Update, _: CallbackContext):
     id_list = int(update.callback_query.data.replace("DELETE", ""))
-    all_lists = context.user_data["all_lists"]
-    my_list = all_lists[all_lists.id == id_list].squeeze()
-    logger.warning(f"{context.user_data['user'].apodo} ha elegido eliminar la lista '{my_list.list_name}'")
 
     text = f"¿Seguro que quieres eliminar la lista?"
     keyboard = [[InlineKeyboardButton("Eliminar", callback_data="DELETE" + str(id_list)),
                  InlineKeyboardButton("Volver atrás", callback_data="BACK")]]
 
-    await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
     return DELETE_LIST
 
 
-async def delete_list2(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def delete_list2(update: Update, context: CallbackContext):
     list_id = int(update.callback_query.data.replace("DELETE", ""))
     my_list = db.delete("lists", list_id).iloc[0]
-    logger.warning(f"{context.user_data['user'].apodo} ha confirmado eliminar la lista '{my_list.list_name}'")
+    logger.warning(
+        f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha eliminado la lista '{my_list.list_name}'")
     text = f"{context.user_data['user'].apodo} ha eliminado la lista:\n{list_to_text(my_list)}"
     try:
-        await context.bot.delete_message(chat_id=ID_MANITOBA, message_id=int(my_list.message_id))
+        context.bot.deleteMessage(chat_id=ID_MANITOBA, message_id=int(my_list.message_id))
     except Exception as error:
         logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
 
-    await context.bot.send_message(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
+    context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
 
-    await lists_state(update, context)
+    lists_state(update, context)
 
     return CHOOSE_LIST
 
 
-async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.delete_message()
-    logger.warning(f"{context.user_data['user'].apodo} ha salido del comando listas")
+def end(update: Update, context: CallbackContext):
+    update.callback_query.delete_message()
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando listas")
 
     return ConversationHandler.END
 
@@ -194,7 +201,7 @@ def list_to_text(my_list):
     return text
 
 
-async def edit_list_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def edit_list_manual(update: Update, context: CallbackContext):
     all_lists = db.select("lists")
     ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{context.user_data['user'].apodo} ha editado la lista con el mensaje\n{update.message.text} ")
@@ -208,13 +215,13 @@ async def edit_list_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elements = [re.sub(r"^\s* *-* *", "", element) for element in elements]
     my_list.elements = elements
     my_list.tipo_elementos = [0] * len(elements)
-    await context.bot.delete_message(update.effective_chat.id, update.message.message_id)
+    context.bot.deleteMessage(update.effective_chat.id, update.message.message_id)
     try:
-        await context.bot.delete_message(ID_MANITOBA, int(my_list.message_id))
+        context.bot.deleteMessage(ID_MANITOBA, int(my_list.message_id))
     except Exception as error:
         logger.error(f"Fallo al eliminar el mensaje  {my_list.message_id} -> {error}")
     text = f"{context.user_data['user'].apodo} ha editado la lista:\n{list_to_text(my_list)}"
-    new_message = await context.bot.send_message(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
+    new_message = context.bot.sendMessage(chat_id=ID_MANITOBA, parse_mode="HTML", text=text)
     my_list.message_id = new_message.message_id
     db.update_list(my_list)
 
@@ -231,9 +238,9 @@ def get_conv_handler():
             ],
             CREATE_LIST: [CallbackQueryHandler(lists_state, pattern='^CANCEL$'),
                           CallbackQueryHandler(create_list2)],
-            CREATE_LIST2: [MessageHandler(filters.TEXT & ~filters.COMMAND, create_list3),
+            CREATE_LIST2: [MessageHandler(Filters.text & ~Filters.command, create_list3),
                            CallbackQueryHandler(lists_state, pattern='^CANCEL$')],
-            CREATE_LIST3: [MessageHandler(filters.TEXT & ~filters.COMMAND, end_crete_list),
+            CREATE_LIST3: [MessageHandler(Filters.text & ~Filters.command, end_crete_list),
                            CallbackQueryHandler(lists_state, pattern='^CANCEL$')],
             DELETE_LIST: [
                 CallbackQueryHandler(delete_list2, pattern='^DELETE'),

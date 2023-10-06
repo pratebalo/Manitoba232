@@ -1,12 +1,12 @@
 import pandas as pd
 import os.path
-from utils.logger_config import logger
+from utils import logger_config 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from utils import gillweb
-from telegram.ext import ContextTypes
+from telegram.ext import CallbackContext
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/contacts',
@@ -15,6 +15,8 @@ SERVICE_ACCOUNT_FILE = 'keys.json'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
+
+logger = logger_config.logger
 if os.path.exists(ROOT_DIR + '/token.json'):
     creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)
@@ -32,7 +34,7 @@ if not creds or not creds.valid:
 service = build('people', 'v1', credentials=creds, cache_discovery=False)
 
 
-async def update_contacts(_: ContextTypes.DEFAULT_TYPE):
+def update_contacts(_: CallbackContext):
     result_set = service.people().connections().list(
         resourceName='people/me',
         pageSize=2000,
@@ -90,11 +92,14 @@ async def update_contacts(_: ContextTypes.DEFAULT_TYPE):
         for j in row['memberships']:
             memberships.append({'contactGroupMembership': {'contactGroupResourceName': 'contactGroups/' + j}})
         body['memberships'] = memberships
+        logger.warning(
+            f"Se crea el contacto    -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
+            f"{row.biographies} {row.phoneNumbers} {row.memberships}")
         service.people().createContact(body=body).execute()
-        logger.warning(f"Se crea el contacto    -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
-                       f"{row.biographies} {row.phoneNumbers} {row.memberships}")
 
     for _, row in data_gmail2.iterrows():
+        logger.warning(
+            f"Se elimina el contacto -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
+            f"{row.biographies} {row.phoneNumbers} {row.memberships}")
+
         service.people().deleteContact(resourceName=row['resourceName']).execute()
-        logger.warning(f"Se elimina el contacto -> {row.givenName} {row.familyName}. {row.biographies} {row.emailAddresses} "
-                       f"{row.biographies} {row.phoneNumbers} {row.memberships}")

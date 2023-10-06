@@ -1,27 +1,30 @@
-from utils.logger_config import logger
+from utils import logger_config
 from decouple import config
 
-from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 import src.utilitys as ut
 from utils import database as db
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
 
+logger = logger_config.logger
+
 SELECT_POLL = 0
 
 
-async def polls_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def polls_state(update: Update, context: CallbackContext):
     ut.set_actual_user(update.effective_user.id, context)
+    chat_id = update.effective_chat.id
     if update.message:
-        await update.message.delete()
+        context.bot.deleteMessage(chat_id, update.message.message_id)
     if update.effective_chat.id == ID_MANITOBA:
-        await update.effective_user.send_message(text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /encuestas")
-        return ConversationHandler.END
+        context.bot.sendMessage(chat_id=update.effective_user.id, text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /encuestas")
+        return
     polls = db.select("encuestas")
     polls = polls[~polls.end].reset_index()
 
-    logger.warning(f"{context.user_data['user'].apodo} entró en el comando encuestas")
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} entró en el comando encuestas")
 
     keyboard = []
     text = f"{context.user_data['user'].apodo} ¿Qué quieres hacer?\n"
@@ -40,11 +43,11 @@ async def polls_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("END"))])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.effective_chat.send_message(text, reply_markup=reply_markup)
+    context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
     return SELECT_POLL
 
 
-async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def receive_poll_answer(update: Update, context: CallbackContext) -> None:
     """Summarize a users poll vote"""
     ut.set_actual_user(update.effective_user.id, context)
     data = db.select("data")
@@ -74,41 +77,53 @@ async def receive_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE
     db.update_poll(poll_id, all_votes, poll.message_id, poll.last_vote)
 
 
-async def receive_poll(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def receive_poll(update: Update, context: CallbackContext) -> None:
+    """On receiving polls, reply to it by a closed poll copying the received poll"""
     ut.set_actual_user(update.effective_user.id, context)
-    polls = db.select("encuestas")
     actual_poll = update.effective_message.poll
+    logger.warning(f"{context.user_data['user'].apodo} ha creado la encuesta {actual_poll.question}")
+    if not actual_poll.is_anonymous and not update.message.forward_from:
 
-    poll = polls[polls.id == int(actual_poll.id)].squeeze()
-    # await context.bot.forwardMessage(chat_id=ID_MANITOBA, from_chat_id=ID_MANITOBA, message_id=2993)
-
-    if actual_poll.is_anonymous:
-        return
-
-    await update.effective_message.delete()
-    if not poll.empty:
-        logger.warning(f"{context.user_data['user'].apodo} ha reenviado la encuesta {poll.question}")
-        await context.bot.forwardMessage(chat_id=ID_MANITOBA, from_chat_id=ID_MANITOBA, message_id=int(poll.message_id))
-    else:
-
+        update.effective_message.delete()
         options = [o.text.replace("'", "") for o in actual_poll.options]
-        logger.warning(f"{context.user_data['user'].apodo} ha creado la encuesta {actual_poll.question} - {options}")
         if len(options) < 10:
             options += ["NS/NC - No puedo"]
+        if update.message.reply_to_message:
+            if update.message.reply_to_message.forward_from_chat:
+                new_poll = context.bot.send_poll(
+                    update.effective_chat.id,
+                    question=actual_poll.question.replace("'", ""),
+                    options=options,
+                    is_anonymous=False,
+                    allows_multiple_answers=actual_poll.allows_multiple_answers,
+                    reply_to_message_id=update.message.reply_to_message.message_id
+                )
 
-        new_poll = await context.bot.send_poll(ID_MANITOBA,
-                                               question=actual_poll.question.replace("'", ""),
-                                               options=options,
-                                               is_anonymous=False,
-                                               allows_multiple_answers=actual_poll.allows_multiple_answers)
+                url = f"https://t.me/c/{str(new_poll.chat.id)[4:]}/{new_poll.message_id}?thread={update.message.reply_to_message.message_id}"
+            else:
+                new_poll = context.bot.send_poll(
+                    update.effective_chat.id,
+                    question=actual_poll.question.replace("'", ""),
+                    options=options,
+                    is_anonymous=False,
+                    allows_multiple_answers=actual_poll.allows_multiple_answers
+                )
+                url = f"https://t.me/c/{str(new_poll.chat.id)[4:]}/{new_poll.message_id}"
+        else:
+            new_poll = context.bot.send_poll(
+                update.effective_chat.id,
+                question=actual_poll.question.replace("'", ""),
+                options=options,
+                is_anonymous=False,
+                allows_multiple_answers=actual_poll.allows_multiple_answers
+            )
+            url = f"https://t.me/c/{str(new_poll.chat.id)[4:]}/{new_poll.message_id}"
 
-        url = f"https://t.me/c/{str(new_poll.chat.id)[4:]}/{new_poll.message_id}"
-
-        db.insert_poll(new_poll.poll.id, new_poll.poll.question, options, [], url, new_poll.message_id)
+        db.insert_poll(new_poll.poll.id, new_poll.poll.question, options, [], url, update.message.chat_id, new_poll.message_id)
 
 
-async def democracy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.callback_query.delete_message()
+def democracy(update: Update, context: CallbackContext) -> None:
+    update.callback_query.delete_message()
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando democracia")
     data = db.select("data")
     polls = db.select("encuestas")
@@ -130,75 +145,81 @@ async def democracy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 text1 += f"x{total}\n"
             text2 = f"{persona.apodo}, al vivir en una democracia tienes derecho a votar en las encuestas\n" + questions
             try:
-                await context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text2)
+                context.bot.sendMessage(chat_id=persona.id, parse_mode="HTML", text=text2)
             except Exception as error:
                 logger.warning(f"{persona.apodo} con id {persona.id} NO tiene activado el bot -> {error}")
 
-    await context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML", text=text1)
+    context.bot.sendMessage(ID_MANITOBA, parse_mode="HTML", text=text1)
 
 
-async def bot_activated(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def bot_activated(update: Update, context: CallbackContext) -> None:
     ut.set_actual_user(update.effective_user.id, context)
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando bot_activado")
     data = db.select("data")
     db.update_bot_activated_all()
     for _, person in data.iterrows():
         try:
-            message = await context.bot.sendMessage(chat_id=person.id, parse_mode="HTML", text="Test de bot activado")
-            await message.delete()
+            message = context.bot.sendMessage(chat_id=person.id, parse_mode="HTML", text="Test de bot activado")
+            context.bot.deleteMessage(message.chat_id, message.message_id)
+            # print(f"{persona.apodo} con id {persona.id} tiene activado el bot")
         except Exception as error:
-            db.update_fields_table(table="data", idx=person.id, activado=False)
-
-            await update.effective_chat.send_message(parse_mode="HTML", text=f"{person.apodo} con id {person.id} NO tiene activado el bot")
+            db.update_bot_not_activated(person.id)
+            context.bot.sendMessage(chat_id=update.effective_chat.id, parse_mode="HTML",
+                                    text=f"{person.apodo} con id {person.id} NO tiene activado el bot")
             logger.warning(f"{person.apodo} con id {person.id} NO tiene activado el bot -> {error}")
 
 
-async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.delete_message()
-    logger.warning(f"{context.user_data['user'].apodo} ha salido del comando encuestas")
+def end(update: Update, context: CallbackContext):
+    update.callback_query.delete_message()
+    logger.warning(f"{update.effective_chat.type} -> {context.user_data['user'].apodo} ha salido del comando encuestas")
 
     return ConversationHandler.END
 
 
-async def view_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def view_poll(update: Update, context: CallbackContext):
     poll_id = int(update.callback_query.data.replace("VIEW", ""))
     polls = db.select("encuestas")
     poll = polls[polls.id == poll_id].squeeze()
 
+    chat = int(poll.chat_id)
     message_id = int(poll.message_id)
-    await update.callback_query.delete_message()
-    message = await context.bot.forwardMessage(chat_id=update.effective_chat.id, from_chat_id=ID_MANITOBA, message_id=message_id)
-    if update.effective_chat.id == ID_MANITOBA:
+    try:
+        update.callback_query.delete_message()
+    except Exception as error:
+        logger.error(f"Fallo al eliminar el mensaje -> {error}")
+    message = context.bot.forwardMessage(update.effective_chat.id, chat, message_id, )
+    if update.effective_chat.id == chat:
         db.update_poll(poll.id, poll.votes, message.message_id, poll.last_vote)
         try:
-            await context.bot.deleteMessage(ID_MANITOBA, message_id)
+            context.bot.deleteMessage(chat, message_id)
         except Exception as error:
             logger.error(f"No se puede eliminar el mensaje -> {error}")
 
-    await polls_state(update, context)
+    polls_state(update, context)
 
 
-async def delete_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def delete_poll(update: Update, context: CallbackContext):
     poll_id = int(update.callback_query.data.replace("DELETE", ""))
     polls = db.select("encuestas")
     poll = polls[polls.id == poll_id].squeeze()
 
+    chat = int(poll.chat_id)
     message_id = int(poll.message_id)
     db.delete("encuestas", poll.id)
-    await update.callback_query.delete_message()
+    update.callback_query.delete_message()
     try:
-        await context.bot.deleteMessage(ID_MANITOBA, message_id)
+        context.bot.deleteMessage(chat, message_id)
     except Exception as error:
         logger.error(f"No se puede eliminar el mensaje de la encuesta-> {error}")
-    await polls_state(update, context)
+    polls_state(update, context)
 
 
-async def end_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def end_poll(update: Update, context: CallbackContext):
     poll_id = int(update.callback_query.data.replace("CLOSE", ""))
     data = db.select("data")
     polls = db.select("encuestas")
     poll = polls[polls.id == poll_id].squeeze()
-    await update.callback_query.delete_message()
+    update.callback_query.delete_message()
 
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando democracia")
     text = f"La encuesta {poll.question} ha finalizado.\n"
@@ -210,13 +231,12 @@ async def end_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text2 += f"<a href='tg://user?id={persona.id}'>{persona.apodo}</a>\n"
     if not all_voted:
         text += text2
-    db.update_fields_table(table="encuestas", idx=poll.id, end=True)
+    db.end_poll(poll.id)
+    context.bot.stopPoll(int(poll.chat_id), int(poll.message_id))
+    context.bot.forwardMessage(int(poll.chat_id), int(poll.chat_id), int(poll.message_id), )
+    context.bot.sendMessage(ID_MANITOBA, text, parse_mode="HTML")
 
-    await context.bot.stopPoll(ID_MANITOBA, int(poll.message_id))
-    await context.bot.forwardMessage(ID_MANITOBA, ID_MANITOBA, int(poll.message_id))
-    await context.bot.sendMessage(ID_MANITOBA, text, parse_mode="HTML")
-
-    await polls_state(update, context)
+    polls_state(update, context)
 
 
 def get_conv_handler_polls():
