@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes
-from utils import logger_config
+from utils.logger_config import logger
 import src.utilitys as ut
 from decouple import config
 from utils import client_drive
@@ -9,8 +9,6 @@ from utils import client_drive
 DRIVE1, DRIVE2, DRIVE3 = range(3)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
-
 FOLDER_BASE = config("FOLDER_BASE")
 
 

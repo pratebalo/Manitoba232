@@ -2,7 +2,7 @@ import os.path
 import random
 import utils.gillweb as gillweb
 from decouple import config
-from utils import logger_config 
+from utils.logger_config import logger 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -23,8 +23,6 @@ SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/a
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 creds = None
-
-logger = logger_config.logger
 if os.path.exists(ROOT_DIR + '/token.json'):
     creds = Credentials.from_authorized_user_file(ROOT_DIR + '/token.json',
                                                   SCOPES)

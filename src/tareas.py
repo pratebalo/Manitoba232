@@ -6,7 +6,7 @@ from datetime import date
 from telegram_bot_calendar import DetailedTelegramCalendar, DAY
 
 import pandas as pd
-from utils import logger_config
+from utils.logger_config import logger
 import random
 import src.utilitys as ut
 
@@ -14,8 +14,6 @@ import src.utilitys as ut
 ELEGIR_TAREA, CREAR_TAREA1, CREAR_TAREA2, CREAR_TAREA3, CREAR_TAREA4, CREAR_TAREA5, FINAL_OPTION = range(7)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
-
 your_translation_months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre",
                            "Octubre", "Noviembre", "Diciembre"]
 your_translation_days_of_week = list('LMXJVSD')

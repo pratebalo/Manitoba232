@@ -1,4 +1,4 @@
-from utils import logger_config
+from utils.logger_config import logger
 from decouple import config
 
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes
@@ -7,8 +7,6 @@ import src.utilitys as ut
 from utils import database as db
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-
-logger = logger_config.logger
 
 SELECT_POLL = 0
 

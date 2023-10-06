@@ -1,4 +1,4 @@
-from utils import logger_config
+from utils.logger_config import logger
 import src.utilitys as ut
 
 from decouple import config
@@ -9,7 +9,6 @@ from gtts import gTTS
 LOQUENDO_1, LOQUENDO_2 = range(2)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
 
 
 async def loquendo(update: Update, context: ContextTypes.DEFAULT_TYPE):

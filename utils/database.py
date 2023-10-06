@@ -1,4 +1,4 @@
-from utils import logger_config
+from utils.logger_config import logger
 import pandas as pd
 import numpy as np
 import json
@@ -12,7 +12,6 @@ DATABASE = config("DATABASE")
 PASSWORD_DB = config("PASSWORD_DB")
 engine = create_engine(f'postgresql://{USER_DB}:{PASSWORD_DB}@{HOST}/{DATABASE}')
 connection = engine.connect()
-logger = logger_config.logger
 
 
 def select(table):

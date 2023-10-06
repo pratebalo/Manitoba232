@@ -1,4 +1,4 @@
-from utils import logger_config
+from utils.logger_config import logger
 import re
 import requests
 import os
@@ -20,7 +20,6 @@ ID_MANITOBA = int(config("ID_MANITOBA"))
 ID_TESORERIA = int(config("ID_TESORERIA"))
 ID_ADMIN = int(config("ID_ADMIN"))
 ID_SHEET_EXPENSES = config("ID_SHEET_EXPENSES")
-logger = logger_config.logger
 
 
 async def treasury(update: Update, context: ContextTypes.DEFAULT_TYPE):

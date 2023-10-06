@@ -1,6 +1,6 @@
 from utils.sheets_drive import spreadsheets, get_sheet, append_data, clear_sheet
 import warnings
-from utils import logger_config
+from utils.logger_config import logger
 import pandas as pd
 import src.utilitys as ut
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -10,8 +10,6 @@ from decouple import config
 
 MENU1, MENU2, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, ELIMINAR_LISTA, FINAL_OPTION = range(9)
 warnings.filterwarnings("ignore")
-
-logger = logger_config.logger
 
 ID_ACAMPADA = config("ID_ACAMPADA")
 ID_TESORERIA = config("ID_TESORERIA")

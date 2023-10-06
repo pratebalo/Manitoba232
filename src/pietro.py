@@ -1,4 +1,4 @@
-from utils import logger_config
+from utils.logger_config import logger
 import src.utilitys as ut
 
 from decouple import config
@@ -8,7 +8,6 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 STAGE1, STAGE2 = range(2)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
 
 
 async def pietro_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):

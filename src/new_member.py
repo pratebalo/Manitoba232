@@ -4,7 +4,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 import src.utilitys as ut
 from utils import database as db
 from decouple import config
-from utils import logger_config
+from utils.logger_config import logger
 from datetime import date, datetime
 from telegram_bot_calendar import DetailedTelegramCalendar, YEAR
 
@@ -12,8 +12,6 @@ from telegram_bot_calendar import DetailedTelegramCalendar, YEAR
 SELECT_NAME, SELECT_SURNAME, SELECT_NICK, SELECT_GENDER, SELECT_DATE, SELECT_DATE2, FINAL_OPTION = range(7)
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
-
 your_translation_months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre",
                            "Octubre", "Noviembre", "Diciembre"]
 your_translation_days_of_week = list('LMXJVSD')

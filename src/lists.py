@@ -7,11 +7,10 @@ import re
 from datetime import datetime
 from utils import database as db
 from decouple import config
-from utils import logger_config
+from utils.logger_config import logger
 
 CHOOSE_LIST, CREATE_LIST, CREATE_LIST2, CREATE_LIST3, DELETE_LIST, FINAL_OPTION = range(6)
 ID_MANITOBA = int(config("ID_MANITOBA"))
-logger = logger_config.logger
 
 
 async def lists_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
