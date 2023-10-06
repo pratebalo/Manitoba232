@@ -1,15 +1,18 @@
 from utils.sheets_drive import spreadsheets, get_sheet, append_data, clear_sheet
 import warnings
-from utils.logger_config import logger
+from utils import logger_config 
 import pandas as pd
 import src.utilitys as ut
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes
+from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, CallbackContext
 
 from decouple import config
 
 MENU1, MENU2, CREAR_LISTA2, EDITAR_LISTA1, EDITAR_LISTA2, EDITAR_LISTA_A, EDITAR_LISTA_E, ELIMINAR_LISTA, FINAL_OPTION = range(9)
 warnings.filterwarnings("ignore")
+
+
+logger = logger_config.logger
 
 ID_ACAMPADA = config("ID_ACAMPADA")
 ID_TESORERIA = config("ID_TESORERIA")
@@ -392,28 +395,32 @@ def get_all_shopping_day():
     return data
 
 
-async def update_all(update: Update, _: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
+def update_all(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
 
-    message = await chat.send_message(text=f'Generando cantidades y lista de la compra')
-    message2 = await chat.send_sticker(sticker='CAACAgIAAxkBAAIJf2Perl8wSGXGavHr4598UvY10lLVAAIjAAMoD2oUJ1El54wgpAYuBA')
+    message = context.bot.sendMessage(chat_id, text=f'Generando cantidades y lista de la compra')
+    'CAACAgIAAxkBAAIJf2Perl8wSGXGavHr4598UvY10lLVAAIjAAMoD2oUJ1El54wgpAYuBA'
+    message2 = context.bot.sendSticker(chat_id=chat_id,
+                                       sticker='CAACAgIAAxkBAAIJf2Perl8wSGXGavHr4598UvY10lLVAAIjAAMoD2oUJ1El54wgpAYuBA')
     update_cantidades()
     update_shopping_list()
-    await message.delete()
-    await message2.delete()
-    await chat.send_message(text=f'https://docs.google.com/spreadsheets/d/{ID_ACAMPADA}')
+    context.bot.deleteMessage(chat_id=chat_id, message_id=message.message_id)
+    context.bot.deleteMessage(chat_id=chat_id, message_id=message2.message_id)
+    context.bot.sendMessage(chat_id, text=f'https://docs.google.com/spreadsheets/d/{ID_ACAMPADA}')
 
 
-async def modificar_cantidades(_: Update, _2: ContextTypes.DEFAULT_TYPE):
+def modificar_cantidades(_: Update, _2: CallbackContext):
     print()
 
 
-async def menu_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def menu_state(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
     user = update.effective_user
 
     ut.set_actual_user(user.id, context)
+    id_mensaje = update.message.message_id
 
-    logger.warning(f"{user.first_name} entró en el comando menu")
+    logger.warning(f"{update.effective_chat.type} -> {user.first_name} entró en el comando menu")
 
     text = f"{user.first_name} ¿Qué quieres hacer?\n"
 
@@ -422,15 +429,17 @@ async def menu_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("Terminar", callback_data=str("TERMINAR"))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.effective_chat.send_message(text, reply_markup=reply_markup)
-    await update.message.delete()
+    context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
+    context.bot.deleteMessage(chat_id, id_mensaje)
     return MENU1
 
 
-async def elegir_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def elegir_menu(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
     user = update.effective_user
+    id_mensaje = update.callback_query.message.message_id
     context.user_data["type_menu"] = update.callback_query.data
-    logger.warning(f"{user.first_name} eligió {update.callback_query.data}")
+    logger.warning(f"{update.effective_chat.type} -> {user.first_name} eligió {update.callback_query.data}")
 
     text = f"{user.first_name} ¿Qué quieres hacer?\n"
 
@@ -439,13 +448,13 @@ async def elegir_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton("Terminar", callback_data=str("TERMINAR"))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.effective_chat.send_message(text, reply_markup=reply_markup)
-    await update.callback_query.message.delete()
+    context.bot.sendMessage(chat_id, text, reply_markup=reply_markup)
+    context.bot.deleteMessage(chat_id, id_mensaje)
     return MENU2
 
 
-async def terminar(update: Update, _: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.delete_message()
+def terminar(update: Update, _: CallbackContext):
+    update.callback_query.delete_message()
 
     return ConversationHandler.END
 

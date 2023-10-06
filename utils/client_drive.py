@@ -1,4 +1,4 @@
-from utils.logger_config import logger 
+from utils import logger_config 
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -42,6 +42,8 @@ if not creds or not creds.valid:
         token.write(creds.to_json())
 
 drive_service = build('drive', 'v3', credentials=creds, cache_discovery=False)
+
+logger = logger_config.logger
 
 
 def get_sheets_by_id(file_id, mime_type):
