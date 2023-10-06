@@ -1,37 +1,51 @@
-import logging
-import sys
+# import logging
+#
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# logger = logging.getLogger(__name__)
+#
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-# logging.getLogger('apscheduler').propagate = False
-# logging.getLogger('telegram.vendor.ptb_urllib3').propagate = False
+import logging
+
+# Configura el sistema de registro
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s')
 
 httpx_logger = logging.getLogger('httpx')
 httpx_logger.setLevel(logging.WARNING)
+# logging.getLogger('apscheduler').propagate = False
+# logging.getLogger('telegram.vendor.ptb_urllib3').propagate = False
 
 
-# Crear un filtro personalizado
+# Crea dos manejadores de registro diferentes
+info_warning_handler = logging.FileHandler('info_warning.log')
+error_handler = logging.FileHandler('error.log')
+
+
+# Crea un filtro personalizado para INFO y WARNING
 class InfoWarningFilter(logging.Filter):
     def filter(self, record):
         return record.levelno <= logging.WARNING
 
 
-# Crear un manejador para stdout (nivel INFO y WARNING)
-stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setLevel(logging.INFO)
-stdout_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s: %(message)s'))
-stdout_handler.addFilter(InfoWarningFilter())
+# Aplica el filtro personalizado al manejador de info_warning
+info_warning_handler.addFilter(InfoWarningFilter())
 
-# Crear un manejador para stderr (nivel ERROR)
-stderr_handler = logging.StreamHandler(sys.stderr)
-stderr_handler.setLevel(logging.ERROR)
-stderr_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s: %(message)s'))
+# Configura el nivel de registro para cada manejador
+info_warning_handler.setLevel(logging.INFO)
+error_handler.setLevel(logging.ERROR)
 
-# Agregar los manejadores al registro
+# Configura el formato de registro para los manejadores
+formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+info_warning_handler.setFormatter(formatter)
+error_handler.setFormatter(formatter)
+
+# Crea un registro
 logger = logging.getLogger()
-logger.addHandler(stdout_handler)
-logger.addHandler(stderr_handler)
+
+# Agrega los manejadores al registro
+logger.addHandler(info_warning_handler)
+logger.addHandler(error_handler)
 
 # Ejemplos de registros
-logger.info("Este es un mensaje de nivel INFO (stdout)")
-logger.warning("Este es un mensaje de nivel WARNING (stdout)")
-logger.error("Este es un mensaje de nivel ERROR (stderr)")
+logger.info("Este es un mensaje de nivel INFO (info_warning.log)")
+logger.warning("Este es un mensaje de nivel WARNING (info_warning.log)")
+logger.error("Este es un mensaje de nivel ERROR (error.log)")
