@@ -7,7 +7,7 @@
 import logging
 
 # Configura el sistema de registro
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
 
 httpx_logger = logging.getLogger('httpx')
 httpx_logger.setLevel(logging.WARNING)
