@@ -133,12 +133,14 @@ if __name__ == "__main__":
     app.add_handler(drive.conv_handler_drive)
     app.add_handler(new_member.get_conv_handler_start())
     app.add_handler(MessageHandler(filters.ALL, echo))
+    app.add_handler(MessageHandler(filters.ALL, echo))
 
     job.run_daily(birthday.birthday, time(7, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muted, time(17, 54, 00, 000000))
     job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
-    job.run_repeating(utilitys.check_logs, interval=5, first=1)
+    job.run_repeating(utilitys.check_log_errors, interval=60, first=1)
+    job.run_repeating(utilitys.check_last_logs, interval=60, first=1)
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     except Exception as e:

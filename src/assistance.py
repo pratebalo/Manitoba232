@@ -120,7 +120,8 @@ async def assign_persons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard.append(part_keyboard)
             part_keyboard = []
 
-    keyboard.append([InlineKeyboardButton("Confirmar asistencia", callback_data="CONFIRM")])
+    keyboard.extend([[InlineKeyboardButton("Confirmar asistencia", callback_data="CONFIRM")],
+                     [InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
     reply_markup = InlineKeyboardMarkup(keyboard)
     if update.callback_query:
         await update.callback_query.edit_message_text(parse_mode="HTML", reply_markup=reply_markup, text="<b>¿Quiénes han asistido?</b>")
@@ -211,6 +212,7 @@ def get_conv_handler():
             # CREAR_TAREA1: [MessageHandler(filters.TEXT & ~filters.COMMAND, elegir_fecha)],
             # CREAR_TAREA2: [CallbackQueryHandler(elegir_fecha2)],
             SELECT_PERSON: [CallbackQueryHandler(end_creation, pattern='^CONFIRM$'),
+                            CallbackQueryHandler(assistance_state, pattern='^CANCEL'),
                             CallbackQueryHandler(assign_persons)],
             # FINAL_OPTION: [
             #     CallbackQueryHandler(tareas, pattern='^CONTINUAR$'),
