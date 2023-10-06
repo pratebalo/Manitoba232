@@ -10,13 +10,12 @@ from telegram.ext import CommandHandler, MessageHandler, filters, ConversationHa
 from datetime import datetime, time, timedelta
 
 from dotenv import load_dotenv
-from utils import contacts_drive as contacts, menu, logger_config, database as db
+from utils import contacts_drive as contacts, menu, database as db
 from utils.sheets_drive import generate_sheet_sections
+from utils.logger_config import logger
 from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance, ass, pietro, loquendo
 
 warnings.filterwarnings("ignore")
-
-logger = logger_config.logger
 
 ID_MANITOBA = int(config("ID_MANITOBA"))
 ID_SHEET_LISTADOS = config('ID_SHEET_LISTADOS')
@@ -138,9 +137,6 @@ if __name__ == "__main__":
     job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muted, time(17, 54, 00, 000000))
     job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
-    logger.info(f"Iniciando el bot")
-    logger.error(f"Fallo al eliminar el mensaje")
-    logger.warning(f"Fallo al eliminar el mensaje")
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     except Exception as e:
