@@ -33,6 +33,8 @@ async def muted(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.id != ID_MANITOBA:
+        return
     ut.set_actual_user(update.effective_user.id, context)
     user = context.user_data['user']
     user.total_mensajes += 1
@@ -40,6 +42,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user.ultimo_mensaje = datetime.today().strftime('%d/%m/%Y %H:%M:S')
     message = update.message
     chat = update.effective_chat.type
+
     if message:
         if message.text:
             if "la lista:\n" in message.text:
@@ -79,9 +82,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info(f"{chat} -> {user.apodo} ha anclado un mensaje")
         else:
             logger.info(f"{chat} -> message desconocido:  {message}")
-        db.update_fields_table(table="data", idx=user.id,
-                               ultimo_mensaje=user.ultimo_mensaje, total_mensajes=user.total_mensajes,
-                               ronda_mensajes=user.ronda_mensajes, sticker=user.sticker, gif=user.gif)
 
     elif update.edited_message:
         user.total_mensajes -= 1
@@ -89,6 +89,10 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.warning(f"{chat} -> {user.apodo} ha editado un mensaje. Con un total de {user.total_mensajes} mensajes y {user.ronda_mensajes} esta ronda")
     else:
         logger.info(f"{chat} -> update desconocido: {update}")
+
+    db.update_fields_table(table="data", idx=user.id,
+                           ultimo_mensaje=user.ultimo_mensaje, total_mensajes=user.total_mensajes,
+                           ronda_mensajes=user.ronda_mensajes, sticker=user.sticker, gif=user.gif)
 
 
 async def listings(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -139,7 +143,7 @@ if __name__ == "__main__":
     job.run_daily(contacts.update_contacts, time(4, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
     # job.run_daily(muted, time(17, 54, 00, 000000))
     job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
-    job.run_repeating(utilitys.check_log_errors, interval=60, first=1)
+
     job.run_repeating(utilitys.check_last_logs, interval=60, first=1)
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
