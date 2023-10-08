@@ -1,4 +1,3 @@
-from telegram import Update
 from telegram.ext import ContextTypes
 
 from decouple import config
@@ -6,6 +5,7 @@ from utils import database as db
 import re
 
 ID_ADMIN = config("ID_ADMIN")
+ID_LOGS = config("ID_LOGS")
 
 
 def get_person(person_id: int):
@@ -30,7 +30,7 @@ async def check_log_errors(context: ContextTypes.DEFAULT_TYPE):
     if "last_error_log" in context.bot_data.keys():
         diff = result[result.index(context.bot_data["last_error_log"]) + 1:]
         for text in diff:
-            await context.bot.sendMessage(ID_ADMIN, text=text)
+            await context.bot.sendMessage(ID_ADMIN, text=f"MANITOBA - text")
         context.bot_data["last_error_log"] = result[-1]
     else:
         context.bot_data["last_error_log"] = result[-1]
