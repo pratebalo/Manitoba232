@@ -30,7 +30,7 @@ async def check_log_errors(context: ContextTypes.DEFAULT_TYPE):
     if "last_error_log" in context.bot_data.keys():
         diff = result[result.index(context.bot_data["last_error_log"]) + 1:]
         for text in diff:
-            await context.bot.sendMessage(ID_ADMIN, text=f"MANITOBA - text")
+            await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {text}")
         context.bot_data["last_error_log"] = result[-1]
     else:
         context.bot_data["last_error_log"] = result[-1]
@@ -46,7 +46,7 @@ async def check_last_logs(context: ContextTypes.DEFAULT_TYPE):
     if "last_log" in context.bot_data.keys():
         diff = result[result.index(context.bot_data["last_log"]) + 1:]
         for text in diff:
-            await context.bot.sendMessage(ID_ADMIN, text=text)
+            await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {text}")
         context.bot_data["last_log"] = result[-1]
     else:
         context.bot_data["last_log"] = result[-1]
