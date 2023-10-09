@@ -78,21 +78,17 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info(f"{chat} -> {message.left_chat_member} ha salido del grupo ")
         elif message.pinned_message:
             logger.info(f"{chat} -> {user.apodo} ha anclado un mensaje")
-        elif message.pinned_message:
-            logger.info(f"{chat} -> {user.apodo} ha anclado un mensaje")
         else:
             logger.info(f"{chat} -> message desconocido:  {message}")
 
+        db.update_fields_table(table="data", idx=user.id,
+                               ultimo_mensaje=user.ultimo_mensaje, total_mensajes=user.total_mensajes,
+                               ronda_mensajes=user.ronda_mensajes, sticker=user.sticker, gif=user.gif)
     elif update.edited_message:
-        user.total_mensajes -= 1
-        user.ronda_mensajes -= 1
         logger.warning(f"{chat} -> {user.apodo} ha editado un mensaje. Con un total de {user.total_mensajes} mensajes y {user.ronda_mensajes} esta ronda")
     else:
         logger.info(f"{chat} -> update desconocido: {update}")
 
-    db.update_fields_table(table="data", idx=user.id,
-                           ultimo_mensaje=user.ultimo_mensaje, total_mensajes=user.total_mensajes,
-                           ronda_mensajes=user.ronda_mensajes, sticker=user.sticker, gif=user.gif)
 
 
 async def listings(update: Update, context: ContextTypes.DEFAULT_TYPE):
