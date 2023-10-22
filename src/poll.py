@@ -19,7 +19,7 @@ async def polls_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_user.send_message(text="Usa el bot mejor por aquí para no tener que mandar mensajes por el grupo: /encuestas")
         return ConversationHandler.END
     polls = db.select("encuestas")
-    polls = polls[~polls.end].reset_index()
+    polls = polls[~polls.finished].reset_index()
 
     logger.warning(f"{context.user_data['user'].apodo} entró en el comando encuestas")
 
@@ -112,7 +112,7 @@ async def democracy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando democracia")
     data = db.select("data")
     polls = db.select("encuestas")
-    polls = polls[~polls.end]
+    polls = polls[~polls.finished]
     text1 = "Estos son los miserables que odian la democracia:\n"
     for _, persona in data.iterrows():
         questions = ""
@@ -210,7 +210,7 @@ async def end_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text2 += f"<a href='tg://user?id={persona.id}'>{persona.apodo}</a>\n"
     if not all_voted:
         text += text2
-    db.update_fields_table(table="encuestas", idx=poll.id, end=True)
+    db.update_fields_table(table="encuestas", idx=poll.id, finished=True)
 
     await context.bot.stopPoll(ID_MANITOBA, int(poll.message_id))
     await context.bot.forwardMessage(ID_MANITOBA, ID_MANITOBA, int(poll.message_id))
