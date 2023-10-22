@@ -141,6 +141,7 @@ if __name__ == "__main__":
     job.run_daily(tareas.recordar_tareas, time(9, 00, 00, tzinfo=pytz.timezone('Europe/Madrid')))
 
     job.run_repeating(utilitys.check_last_logs, interval=60, first=1)
+    job.run_repeating(utilitys.check_log_errors, interval=60, first=1)
     try:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
     except Exception as e:
