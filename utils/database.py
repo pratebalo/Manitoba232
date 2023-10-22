@@ -176,8 +176,12 @@ def connect(query):
                 df = pd.DataFrame(result.fetchall(), columns=list(result.keys()))
         else:
             df = None
-        connection.commit()
-        return df
     except Exception as e:
+        connection.rollback()
         logger.error(f"Error: {e}")
         return None
+    else:
+        connection.commit()
+        return df
+    finally:
+        connection.close()
