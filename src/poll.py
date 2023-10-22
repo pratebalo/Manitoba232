@@ -200,7 +200,7 @@ async def end_poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     poll = polls[polls.id == poll_id].squeeze()
     await update.callback_query.delete_message()
 
-    logger.warning(f"{context.user_data['user'].apodo} ha ejecutado el comando democracia")
+    logger.warning(f"{context.user_data['user'].apodo} ha cerrado la encuesta {poll.question}")
     text = f"La encuesta {poll.question} ha finalizado.\n"
     text2 = f"Estos son los miserables que odian la democracia:\n"
     all_voted = True

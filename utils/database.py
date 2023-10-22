@@ -183,5 +183,3 @@ def connect(query):
     else:
         connection.commit()
         return df
-    finally:
-        connection.close()
