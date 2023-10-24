@@ -1,11 +1,13 @@
 import warnings
 import pytz
 import pandas as pd
+
+import src.tictactoe
 import src.utilitys as ut
 
 from decouple import config
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, filters, ConversationHandler, PollAnswerHandler, ContextTypes, Application
+from telegram.ext import CommandHandler, MessageHandler, filters, ConversationHandler, PollAnswerHandler, ContextTypes, Application, PicklePersistence
 
 from datetime import datetime, time, timedelta
 
@@ -90,7 +92,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"{chat} -> update desconocido: {update}")
 
 
-
 async def listings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ut.set_actual_user(update.effective_user.id, context)
     chat = update.effective_chat
@@ -108,7 +109,6 @@ async def listings(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == "__main__":
     load_dotenv()
     app = Application.builder().token(TOKEN).build()
-
     job = app.job_queue
 
     pd.options.display.width = 0
@@ -122,6 +122,7 @@ if __name__ == "__main__":
     app.add_handler(tareas.get_conv_handler())
     app.add_handler(menu.get_conv_handler_menu())
     app.add_handler(assistance.get_conv_handler())
+    app.add_handler(src.tictactoe.get_conv_handler())
     app.add_handler(CommandHandler('cumples', birthday.get_birthday))
     app.add_handler(CommandHandler('allcumples', birthday.get_all_birthday))
     app.add_handler(CommandHandler('listados', listings))
