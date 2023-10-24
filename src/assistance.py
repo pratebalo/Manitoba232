@@ -8,6 +8,7 @@ from utils.logger_config import logger
 import utils.gillweb
 import src.utilitys as ut
 import utils.database as db
+import pandas as pd
 
 # Stages
 ASSISTANCE, SELECT_SECTION, SELECT_NAME, SELECT_PERSON, SELECT_PERSON2, EDIT_ASSISTANCE, DELETE_ASSISTANCE, FINAL_OPTION = range(8)
@@ -46,6 +47,7 @@ async def select_section_assistance(update: Update, context: ContextTypes.DEFAUL
                                          [InlineKeyboardButton("Tropa", callback_data=f"{action}3")],
                                          [InlineKeyboardButton("Escultas", callback_data=f"{action}4")],
                                          [InlineKeyboardButton("Rover", callback_data=f"{action}5")],
+                                         [InlineKeyboardButton("Scouters", callback_data=f"{action}6")],
                                          [InlineKeyboardButton("Terminar", callback_data="END")]])
     await update.callback_query.edit_message_text("<b>Elige la unidad:</b>", reply_markup=reply_markup, parse_mode='HTML')
     return SELECT_SECTION
@@ -112,14 +114,18 @@ async def assign_persons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data_gillweb = context.user_data["data_gillweb"]
     keyboard = []
     part_keyboard = []
-    data_gillweb['unique_name2'] = data_gillweb['unique_name'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
-    for i, persona in data_gillweb.sort_values(by="unique_name2", ignore_index=True).iterrows():
+    for i, persona in data_gillweb[~data_gillweb.scouter].iterrows():
         part_keyboard.append(InlineKeyboardButton(
             f"{persona.unique_name} {'✅' if persona.id in context.user_data['assigned_persons'] else '❌'}", callback_data=persona.id))
         if i % 3 == 2 or i == len(data_gillweb) - 1:
             keyboard.append(part_keyboard)
             part_keyboard = []
-
+    for i, persona in data_gillweb[data_gillweb.scouter].iterrows():
+        part_keyboard.append(InlineKeyboardButton(
+            f"{persona.unique_name} {'✅' if persona.id in context.user_data['assigned_persons'] else '❌'}", callback_data=persona.id))
+        if i % 3 == 2 or i == len(data_gillweb) - 1:
+            keyboard.append(part_keyboard)
+            part_keyboard = []
     keyboard.extend([[InlineKeyboardButton("Confirmar asistencia", callback_data="CONFIRM")],
                      [InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -173,21 +179,34 @@ async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def get_persons_gillweb(section):
-    data_gillweb = utils.gillweb.download_data_gillweb(section)
-    data_gillweb['unique_name'] = data_gillweb['name']
-    duplicates = data_gillweb['name'].duplicated(keep=False)
-    for index, is_duplicate in enumerate(duplicates):
-        if is_duplicate:
-            name = data_gillweb.at[index, 'name']
-            surname = data_gillweb.at[index, 'surname']
-            counter = 1
-            while True:
-                new_name = f"{name} {surname[:counter]}"
-                if not data_gillweb['unique_name'].str.contains(new_name).any():
-                    data_gillweb.at[index, 'unique_name'] = new_name
-                    break
-                counter += 1
-    return data_gillweb[['id', 'unique_name']]
+    scouters = pd.DataFrame(columns=['name'])
+    data = pd.DataFrame()
+    if int(section) < 6:
+        scouters = utils.gillweb.download_data_gillweb(subsection=section).copy()
+        scouters['scouter'] = True
+    scouts = utils.gillweb.download_data_gillweb(section=section).copy()
+    scouts['scouter'] = False
+
+    for data_gillweb in [scouts, scouters]:
+        data_gillweb['unique_name'] = data_gillweb['name']
+        duplicates = data_gillweb['name'].duplicated(keep=False)
+        for index, is_duplicate in enumerate(duplicates):
+            if is_duplicate:
+                name = data_gillweb.at[index, 'name']
+                surname = data_gillweb.at[index, 'surname']
+                counter = 1
+                while True:
+                    new_name = f"{name} {surname[:counter]}"
+                    if not data_gillweb['unique_name'].str.contains(new_name).any():
+                        data_gillweb.at[index, 'unique_name'] = new_name
+                        break
+                    counter += 1
+        if not data_gillweb.empty:
+            data = pd.concat([data, data_gillweb[['id', 'unique_name', 'scouter']]], axis=0)
+
+    data['unique_name'] = data['unique_name'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+    data.sort_values(by=['scouter', 'unique_name'], ignore_index=True, inplace=True)
+    return data
 
 
 def get_conv_handler():

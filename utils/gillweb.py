@@ -70,7 +70,7 @@ def get_gillweb_csv():
     data_final.to_csv("contactos.csv", sep=";", index=False)
 
 
-def download_data_gillweb(section: int = None):
+def download_data_gillweb(section: int = None, subsection: int = None):
     data = []
     for i in range(0, 10):
         try:
@@ -82,6 +82,9 @@ def download_data_gillweb(section: int = None):
 
             if section:
                 url += f"&filter%5B1%5D%5B%5D=scout_subsection.scout_section&filter%5B1%5D%5B%5D=%3D&filter%5B1%5D%5B%5D={section}"
+
+            if subsection:
+                url += f"&filter%5B1%5D%5B%5D=scouter_section&filter%5B1%5D%5B%5D=%3D&filter%5B1%5D%5B%5D={subsection}"
             csv = requests.get(url).text
 
             data = pd.read_csv(StringIO(csv), sep=";", encoding="utf-8",
