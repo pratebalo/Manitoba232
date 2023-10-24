@@ -2,7 +2,7 @@ import os.path
 import random
 import utils.gillweb as gillweb
 from decouple import config
-from utils.logger_config import logger 
+from utils.logger_config import logger
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -46,8 +46,9 @@ ID_SHEET_MANADA = config('ID_SHEET_MANADA')
 ID_SHEET_TROPA = config('ID_SHEET_TROPA')
 ID_SHEET_ESCULTAS = config('ID_SHEET_ESCULTAS')
 ID_SHEET_ROVER = config('ID_SHEET_ROVER')
+ID_SHEET_KRAAL = config("ID_SHEET_KRAAL")
 
-sheet_sections = {1: ID_SHEET_CASTORES, 2: ID_SHEET_MANADA, 3: ID_SHEET_TROPA, 4: ID_SHEET_ESCULTAS, 5: ID_SHEET_ROVER}
+sheet_sections = {1: ID_SHEET_CASTORES, 2: ID_SHEET_MANADA, 3: ID_SHEET_TROPA, 4: ID_SHEET_ESCULTAS, 5: ID_SHEET_ROVER, 6: ID_SHEET_KRAAL}
 
 ID_SHEET_LISTADOS = config('ID_SHEET_LISTADOS')
 

@@ -11,6 +11,7 @@ ID_SHEET_MANADA = config("ID_SHEET_MANADA")
 ID_SHEET_TROPA = config("ID_SHEET_TROPA")
 ID_SHEET_ESCULTAS = config("ID_SHEET_ESCULTAS")
 ID_SHEET_ROVER = config("ID_SHEET_ROVER")
+ID_SHEET_KRAAL = config("ID_SHEET_KRAAL")
 
 
 def get_person(person_id: int):
@@ -55,3 +56,13 @@ async def check_last_logs(context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {text}")
 
     context.bot_data["last_log"] = result[-1]
+
+# folders = [ID_SHEET_CASTORES, ID_SHEET_MANADA, ID_SHEET_TROPA, ID_SHEET_ESCULTAS, ID_SHEET_ROVER]
+# for i in range(1, 6):
+#     data = utils.gillweb.download_data_gillweb(section=i)
+#     sheet = folders[i - 1]
+#     data["full_name"] = data.nombre_dni + " " + data.surname
+#     for person in data.itertuples():
+#         print(person.full_name)
+#
+#     print()
