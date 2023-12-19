@@ -38,7 +38,10 @@ async def check_log_errors(context: ContextTypes.DEFAULT_TYPE):
         if context.bot_data["last_error_log"] in result:
             diff = result[result.index(context.bot_data["last_error_log"]) + 1:]
             for text in diff:
-                await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {text}")
+                max_length = 4096
+                for i in range(0, len(text), max_length):
+                    fragment = text[i:i + max_length]
+                    await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {fragment}")
 
     context.bot_data["last_error_log"] = result[-1]
 
@@ -53,7 +56,10 @@ async def check_last_logs(context: ContextTypes.DEFAULT_TYPE):
         if context.bot_data["last_log"] in result:
             diff = result[result.index(context.bot_data["last_log"]) + 1:]
             for text in diff:
-                await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {text}")
+                max_length = 4096
+                for i in range(0, len(text), max_length):
+                    fragment = text[i:i + max_length]
+                    await context.bot.sendMessage(ID_LOGS, text=f"MANITOBA - {fragment}")
 
     context.bot_data["last_log"] = result[-1]
 
@@ -72,10 +78,9 @@ def get_last_lines(file, num_lines=100):
 
             if char == b'\n':
                 total_lines += 1
-            lines.insert(0, char.decode('utf-8'))
+            lines.insert(0, char.decode('utf-8', errors='replace'))
 
         return ''.join(lines)
-
 
 # folders = [ID_FOLDER_CASTORES, ID_FOLDER_MANADA, ID_FOLDER_TROPA, ID_FOLDER_ESCULTAS, ID_FOLDER_ROVER, ID_FOLDER_KRAAL]
 # for i in range(1, 6):
