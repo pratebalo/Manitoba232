@@ -454,7 +454,7 @@ def update_shopping_list_campamento():
     append_data(sheet, 'Lista_Compra', 'L2', data3)
 
 
-def update_shopping_list():
+def update_shopping_list_acampada():
     final_list = get_final_shopping_acampada()
     data1 = [final_list.columns.values.tolist()]
     data1.extend(final_list.values.tolist())
@@ -578,7 +578,7 @@ async def update_all(update: Update, _: ContextTypes.DEFAULT_TYPE):
     message = await chat.send_message(text=f'Generando cantidades y lista de la compra')
     message2 = await chat.send_sticker(sticker='CAACAgIAAxkBAAIJf2Perl8wSGXGavHr4598UvY10lLVAAIjAAMoD2oUJ1El54wgpAYuBA')
     update_cantidades_verano()
-    update_shopping_list()
+    update_shopping_list_acampada()
     await message.delete()
     await message2.delete()
     await chat.send_message(text=f'https://docs.google.com/spreadsheets/d/{ID_MENU}')
@@ -590,7 +590,7 @@ async def update_all_acampada(update: Update, _: ContextTypes.DEFAULT_TYPE):
     message = await chat.send_message(text=f'Generando cantidades y lista de la compra')
     message2 = await chat.send_sticker(sticker='CAACAgIAAxkBAAIJf2Perl8wSGXGavHr4598UvY10lLVAAIjAAMoD2oUJ1El54wgpAYuBA')
     update_cantidades_acampada()
-    update_shopping_list()
+    update_shopping_list_acampada()
     await message.delete()
     await message2.delete()
     await chat.send_message(text=f'https://docs.google.com/spreadsheets/d/{ID_MENU}')

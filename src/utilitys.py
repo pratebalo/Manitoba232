@@ -86,7 +86,7 @@ def get_last_lines(file, num_lines=100):
             total_lines += len(lines_in_chunk) - 1
 
             # Insertar las líneas en la lista (excepto la última, que puede estar incompleta)
-            lines[:0] = lines_in_chunk[:-1]
+            lines[:0] = lines_in_chunk
 
         # Devolver las líneas concatenadas
         return '\n'.join(lines[-num_lines:])
