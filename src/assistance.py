@@ -143,9 +143,11 @@ async def end_creation(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                       [context.user_data['section'], context.user_data['meeting_name'],
                                        context.user_data['assigned_persons'], datetime.today().strftime('%d/%m/%Y')],
                                       "assistance")
+        assist['people_id'] = context.user_data["data_gillweb"][context.user_data["data_gillweb"].id.isin(assist.people_id)].unique_name.to_list()
         logger.warning(f"{update.effective_user.first_name} ha añadido la asistencia '{assist.squeeze().to_list()}'")
     else:
         assist = db.update_fields_table(table="assistance", idx=int(context.user_data['meeting_id']), people_id=context.user_data['assigned_persons'])
+        assist['people_id'] = context.user_data["data_gillweb"][context.user_data["data_gillweb"].id.isin(assist.people_id)].unique_name.to_list()
         logger.warning(f"{update.effective_user.first_name} ha actualizado la asistencia '{assist.squeeze().to_list()}'")
     await assistance_state(update, context)
     sheets_drive.generate_sheet_assistance(int(context.user_data['section']))
@@ -182,9 +184,9 @@ def get_persons_gillweb(section):
     scouters = pd.DataFrame(columns=['name'])
     data = pd.DataFrame()
     if int(section) < 6:
-        scouters = utils.gillweb.download_data_gillweb(subsection=section).copy()
+        scouters = utils.gillweb.download_data_gillweb(subsection=section)
         scouters['scouter'] = True
-    scouts = utils.gillweb.download_data_gillweb(section=section).copy()
+    scouts = utils.gillweb.download_data_gillweb(section=section)
     scouts['scouter'] = False
 
     for data_gillweb in [scouts, scouters]:
