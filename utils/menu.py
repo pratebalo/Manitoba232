@@ -328,7 +328,7 @@ def get_cantidades_acampada(menu, recetario, asistentes):
 
                 new.iloc[:, 2:-2] = new.iloc[:, 2:-2] * day_visitors
                 new2 = pd.concat([new.iloc[:, 0:2], new.iloc[:, 2:-2].sum(axis=1).round(5), new.iloc[:, -1]] +
-                                 [new.iloc[:, 2 + i:2 + i + 6].sum(axis=1).round(5) for i in range(len(acampada))] + [new.iloc[:, -2]], axis=1)
+                                 [new.iloc[:, 2 + 6 * i:8 + 6 * i].sum(axis=1).round(5) for i in range(len(acampada))] + [new.iloc[:, -2]], axis=1)
                 new2.columns = columns
                 if comida in ['Desayuno', 'Almuerzo', 'Merienda', 'Pan_cena', 'Postre']:
                     cantidades = pd.concat([cantidades, new2, pd.DataFrame([[]])]).reset_index(drop=True)
@@ -658,18 +658,3 @@ def get_conv_handler_menu():
         fallbacks=[CommandHandler('menu', menu_state)],
     )
     return conv_handler_menu
-
-
-
-import cProfile
-
-# prof = cProfile.Profile()
-# prof.enable()
-# update_cantidades_acampada()
-# prof.disable()
-# prof.print_stats(sort="tottime")
-# get_shopping_list_acampada()
-# if __name__ == "__main__":
-#     get_all_shopping_day()
-#     update_cantidades()
-#     update_shopping_list()
