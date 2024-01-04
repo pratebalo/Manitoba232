@@ -147,7 +147,7 @@ async def edit_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def edit_price2(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    new_price = re.sub('[^\\d.]', '', update.message.text.replace(",", "."))
+    new_price = re.sub('[^\\d.]', '', update.message.text.replace(",", ".").replace("'", ".").replace("´", "."))
     logger.warning(f"{context.user_data['user'].apodo} ha introducido el precio {new_price}")
     await update.message.delete()
     await context.user_data["oldMessage"].delete()
@@ -392,7 +392,7 @@ async def end_pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     id_expenses = [int(num) for num in update.callback_query.data.replace("PAY", "").split("-")]
     for idx in id_expenses:
         expense = expenses[expenses.id == idx].squeeze()
-        db.update_fields_table(table="expenses", idx=idx, paid=True)
+        db.update_fields_table(table="expenses", idx=idx, paid=True, paid_date=datetime.today().strftime('%d/%m/%Y'))
 
         client_drive.move_file_to_folder(expense.id_file, client_drive.FOLDER_PAID)
         texto = f"Se te ha pagado el gasto '{expense.concept}' por valor de {expense.price}€ en la fecha {expense.date.strftime('%d/%m/%Y')}"
