@@ -8,6 +8,7 @@ from datetime import datetime
 from utils.sheets_drive import get_sheet, append_data, clear_sheet
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, ContextTypes, MessageHandler, filters
+from decimal import Decimal
 
 from utils import database as db
 from utils import client_drive
@@ -233,7 +234,7 @@ async def bote_state(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def bote2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning(f"{context.user_data['user'].apodo} ha enviado la cantidad {update.message.text}")
-    context.user_data["price"] = re.sub('[^\\d.]', '', update.message.text.replace(",", "."))
+    context.user_data["price"] = re.sub('[^\\d.]', '', update.message.text.replace(",", ".").replace("'", ".").replace("´", "."))
     await context.user_data["oldMessage"].delete()
     await update.message.delete()
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Cancelar", callback_data="CANCEL")]])
@@ -333,7 +334,7 @@ def download_file_telegram(file):
         logger.warning("Error al descargar la imagen")
 
 
-async def pay(update: Update, _: ContextTypes.DEFAULT_TYPE):
+async def pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     expenses = db.select("expenses").sort_values(by=["paid", "id_person"], ignore_index=True)
     data = db.select("data")
     keyboard = []
@@ -344,12 +345,17 @@ async def pay(update: Update, _: ContextTypes.DEFAULT_TYPE):
         name = data[data.id == expense.id_person].squeeze().apodo
         # texto += f" {i + 1}. ({expense.date.strftime('%d/%m')}) {expense.price}€ -> {expense.concept}\n"
         keyboardline.append(InlineKeyboardButton(name, callback_data="NOTHING"))
-        keyboardline.append(InlineKeyboardButton(f"{expense.price}€", callback_data="NOTHING"))
+        keyboardline.append(InlineKeyboardButton(f"{round(expense.price, 2)}€", callback_data="NOTHING"))
         keyboardline.append(InlineKeyboardButton("💰", callback_data="PAY" + str(expense.id_person)))
         keyboard.append(keyboardline)
 
     keyboard.extend([[InlineKeyboardButton("Atrás", callback_data="BACK"), InlineKeyboardButton("Terminar", callback_data="END")]])
     reply_markup = InlineKeyboardMarkup(keyboard)
+    if "oldMessages" in context.user_data:
+        for callback in context.user_data["oldMessages"]:
+            if callback != update.callback_query.message:
+                await callback.delete()
+    context.user_data["oldMessages"] = []
     await update.callback_query.delete_message()
     await update.effective_chat.send_message(text=texto, parse_mode="HTML", reply_markup=reply_markup)
     return PAY
@@ -368,7 +374,8 @@ async def pay2(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"{expense.date}\n{expense.price}€\n{expense.concept}"
         keyboard = [[InlineKeyboardButton("💳💰 PAGAR 💳💰", callback_data=f"PAY{expense.id}")]]
         if len(expenses) == 1:
-            keyboard.append([InlineKeyboardButton("Terminar", callback_data=str("END"))])
+            keyboard.append([InlineKeyboardButton("Seguir pagando", callback_data=str("PAY")),
+                             InlineKeyboardButton("Terminar", callback_data=str("END"))])
         reply_markup = InlineKeyboardMarkup(keyboard)
         filename, file = client_drive.get_file_by_id(expense.id_file)
 
@@ -380,9 +387,10 @@ async def pay2(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     total_expenses = expenses.groupby('id_person').agg({'price': 'sum', 'id': lambda x: '-'.join(map(str, x))}).reset_index().squeeze()
     if len(expenses) > 1:
-        text = f"Pagar todos los gastos de {person.nombre} {person.apellidos}\n{total_expenses.price}€"
+        text = f"Pagar todos los gastos de {person.nombre} {person.apellidos}\n{round(total_expenses.price, 2)}€"
         reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("💳💰 PAGAR TODO 💳💰", callback_data=f"PAY{total_expenses.id}")],
-                                             [InlineKeyboardButton("Terminar", callback_data=str("END"))]])
+                                             [InlineKeyboardButton("Seguir pagando", callback_data=str("PAY")),
+                                              InlineKeyboardButton("Terminar", callback_data=str("END"))]])
         context.user_data["oldMessages"].append(await update.effective_chat.send_message(text=text, parse_mode="HTML", reply_markup=reply_markup))
     return PAY2
 
@@ -398,16 +406,16 @@ async def end_pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
         texto = f"Se te ha pagado el gasto '{expense.concept}' por valor de {expense.price}€ en la fecha {expense.date.strftime('%d/%m/%Y')}"
         await context.bot.sendMessage(chat_id=int(expense.id_person), text=texto)
 
-    for callback in context.user_data["oldMessages"]:
-        if callback != update.callback_query.message:
-            await callback.delete()
-
     update_drive_expenses()
     await pay(update, context)
     return PAY
 
 
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    for callback in context.user_data["oldMessages"]:
+        if callback != update.callback_query.message:
+            await callback.delete()
+    context.user_data["oldMessages"] = []
     await update.callback_query.delete_message()
     logger.warning(f"{context.user_data['user'].apodo} ha salido del comando tesoreria")
     return ConversationHandler.END
@@ -515,6 +523,7 @@ def get_conv_handler():
                   CallbackQueryHandler(treasury, pattern='^BACK'),
                   CallbackQueryHandler(pay2, pattern='^PAY')],
             PAY2: [CallbackQueryHandler(end, pattern='^END$'),
+                   CallbackQueryHandler(pay, pattern='^PAY$'),
                    CallbackQueryHandler(end_pay, pattern='^PAY')],
             EXPENSES: [CallbackQueryHandler(delete_expense, pattern='^VIEW'),
                        CallbackQueryHandler(edit_expense, pattern='^EDIT'),
