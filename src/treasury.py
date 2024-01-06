@@ -412,9 +412,10 @@ async def end_pay(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    for callback in context.user_data["oldMessages"]:
-        if callback != update.callback_query.message:
-            await callback.delete()
+    if "oldMessages" in context.user_data:
+        for callback in context.user_data["oldMessages"]:
+            if callback != update.callback_query.message:
+                await callback.delete()
     context.user_data["oldMessages"] = []
     await update.callback_query.delete_message()
     logger.warning(f"{context.user_data['user'].apodo} ha salido del comando tesoreria")
