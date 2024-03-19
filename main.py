@@ -10,10 +10,10 @@ from telegram.ext import CommandHandler, MessageHandler, filters, ConversationHa
 from datetime import datetime, time, timedelta
 
 from dotenv import load_dotenv
-from utils import contacts_drive as contacts, menu, database as db
+from utils import contacts_drive as contacts, database as db
 from utils.sheets_drive import generate_sheet_sections
 from utils.logger_config import logger
-from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance, ass, pietro, loquendo, utilitys
+from src import poll, tareas, birthday, lists, treasury, new_member, drive, assistance, ass, pietro, loquendo, utilitys, menu
 
 warnings.filterwarnings("ignore")
 

@@ -64,7 +64,7 @@ async def check_last_logs(context: ContextTypes.DEFAULT_TYPE):
     context.bot_data["last_log"] = result[-1]
 
 
-def get_last_lines(file, num_lines=100):
+def get_last_lines(file, num_lines=200):
     buffer_size = 4096  # Puedes ajustar el tamaño del búfer según tus necesidades
 
     with open(file, 'rb') as f:

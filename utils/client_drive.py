@@ -1,4 +1,4 @@
-from utils.logger_config import logger 
+from utils.logger_config import logger
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -118,15 +118,27 @@ def get_parent_id(file_id):
 
 
 def create_folder(name, parent_folder):
-    file_metadata = {
-        'name': name,
-        'parents': [parent_folder],
-        'mimeType': 'application/vnd.google-apps.folder'
-    }
-    file = drive_service.files().create(body=file_metadata,
-                                        supportsAllDrives=True,
-                                        fields='id').execute()
+    existing_folder_id = check_folder_exists(name, parent_folder)
+    if existing_folder_id:
+        return existing_folder_id
+
+    file_metadata = {'name': name,
+                     'parents': [parent_folder],
+                     'mimeType': 'application/vnd.google-apps.folder'}
+    file = drive_service.files().create(body=file_metadata, supportsAllDrives=True, fields='id').execute()
+
     return file.get('id')
+
+
+def check_folder_exists(name, parent_folder):
+    query = f"'{parent_folder}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '{name}'"
+    results = drive_service.files().list(q=query, fields='files(id)').execute()
+    files = results.get('files', [])
+
+    if files:
+        return files[0]['id']
+    else:
+        return None
 
 
 def get_all_files_description(parent_folder):

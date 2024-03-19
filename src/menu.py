@@ -354,8 +354,8 @@ def get_asistentes_acampada():
     x = spreadsheets.values().get(spreadsheetId=ID_MENU, range='Asistentes!B22:AK27').execute()['values']
     headers = x.pop(0)
     for item in x:
-        item.extend([''] * (len(headers) - len(item)))
-    asistentes = pd.DataFrame(x, columns=headers).fillna('').replace('', 0)
+        item.extend([0] * (len(headers) - len(item)))
+    asistentes = pd.DataFrame(x, columns=headers).fillna(0).replace('', 0).replace(' ', 0)
     asistentes.set_index('Dia', inplace=True)
     return asistentes
 
@@ -411,7 +411,7 @@ def get_inventario():
     x = spreadsheets.values().get(spreadsheetId=ID_MENU, range='Inventario!B1:D').execute()['values']
     headers = x.pop(0)
     data = pd.DataFrame(x, columns=headers).dropna(how='all')
-    data['BASE'] = data['BASE'].astype(float)
+    data['BASE'] = data['BASE'].replace("",0).astype(float)
     return data
 
 
@@ -658,3 +658,4 @@ def get_conv_handler_menu():
         fallbacks=[CommandHandler('menu', menu_state)],
     )
     return conv_handler_menu
+update_shopping_list_acampada()

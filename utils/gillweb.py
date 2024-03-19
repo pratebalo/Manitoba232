@@ -98,7 +98,7 @@ def download_data_gillweb(section: int = None, subsection: int = None):
         except requests.Timeout:
             continue
 
-    return data
+    return data.copy()
 
 
 def filter_data(data):
